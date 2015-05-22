@@ -46,10 +46,10 @@ def on_loggable_message(client, message):
     if "channel" in message and isinstance(message["channel"], str): message["channel"] = get_channel(client, message["channel"])
     if "user" in message: message["user"] = get_user(client, message["user"])
     if "inviter" in message: message["inviter"] = get_user(client, message["inviter"])
-    print(json.dumps(message))
+    print(json.dumps(message)); sys.stdout.flush()
 def on_channel_created_message(client, message):
     client.rtm_send_message(get_channel_id_by_name(client, "general"), "pls invit 2 #{}".format(message["channel"]["name"]))
-    print(json.dumps(message))
+    print(json.dumps(message)); sys.stdout.flush()
 
 message_actions = {
     "hello":                   on_ignoreable_message,
