@@ -127,9 +127,9 @@ def main():
                     except KeyboardInterrupt: raise
                     except Exception as e:
                         print("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:", file=sys.stderr)
-                        import traceback; print(traceback.format_exc())
+                        import traceback; print(traceback.format_exc(), file=sys.stderr)
                 else:
-                    print("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT:", message)
+                    print("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT:", message, file=sys.stderr)
         
         # ping the server periodically to make sure our connection is kept alive
         if time.time() - last_ping > 5:
@@ -144,7 +144,7 @@ if __name__ == "__main__":
         except KeyboardInterrupt: break
         except Exception as e:
             print("[ERROR] MAIN LOOP THREW EXCEPTION:", file=sys.stderr)
-            import traceback; print(traceback.format_exc())
+            import traceback; print(traceback.format_exc(), file=sys.stderr)
             print("[INFO] RESTARTING IN 5 SECONDS...", file=sys.stderr)
             time.sleep(5)
-    print("[INFO] SHUTTING DOWN...")
+    print("[INFO] SHUTTING DOWN...", file=sys.stderr)
