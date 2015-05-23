@@ -10,7 +10,9 @@ def process_chat_message(client, user, channel_id, text, timestamp):
         query = result.group(1)
         
         # try to parse it as a math expression
-        try: send(client, channel_id, "{} is {}".format(query, eval_expr(query)))
+        try:
+            send(client, channel_id, "{} is {}".format(query, eval_expr(query)))
+            return
         except: pass
         
         # try to search for it on wikipedia
