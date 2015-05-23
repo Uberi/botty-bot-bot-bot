@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import time, json, sys
+
 from slackclient import SlackClient
+
+from process_chat_message import process_chat_message
 
 if len(sys.argv) != 2:
     print("Usage: {} SLACK_BOT_TOKEN".format(sys.argv[0]))
@@ -18,16 +21,13 @@ def download_file(name, url):
 channel_id_map = {}
 user_id_map = {}
 def get_channel(client, channel_id):
+    """Returns the name of the channel with the channel ID `channel_id`."""
     if channel_id not in channel_id_map:
         channel = json.loads(client.api_call("channels.info", channel=channel_id).decode("utf-8"))["channel"]
         channel_id_map[channel_id] = channel["name"]
     return channel_id_map[channel_id]
-def get_user(client, user_id):
-    if user_id not in user_id_map:
-        user = json.loads(client.api_call("users.info", user=user_id).decode("utf-8"))["user"]
-        user_id_map[user_id] = user["name"]
-    return user_id_map[user_id]
 def get_channel_id_by_name(client, channel_name):
+    """Returns the ID of the channel with name `channel_name`, or `None` if there are none."""
     if channel_name in channel_id_map.values():
         for channel_id, name in channel_id_map.items():
             if name == channel_name: return channel_id
@@ -38,23 +38,32 @@ def get_channel_id_by_name(client, channel_name):
                 channel_id_map[channel["id"]] = channel_name
                 return channel["id"]
     return None
+def get_user(client, user_id):
+    """Returns the username of the user with user ID `user_id`."""
+    if user_id not in user_id_map:
+        user = json.loads(client.api_call("users.info", user=user_id).decode("utf-8"))["user"]
+        user_id_map[user_id] = user["name"]
+    return user_id_map[user_id]
 
 def on_ignoreable_message(client, message): pass
 def on_loggable_message(client, message):
-    # download message files if present
     if "file" in message: download_file(message["file"]["id"] + " - " + message["file"]["name"], message["file"]["url_download"])
-    if "channel" in message and isinstance(message["channel"], str): message["channel"] = get_channel(client, message["channel"])
-    if "user" in message and isinstance(message["user"], str): message["user"] = get_user(client, message["user"])
-    if "inviter" in message and isinstance(message["inviter"], str): message["inviter"] = get_user(client, message["inviter"])
-    print(json.dumps(message)); sys.stdout.flush()
+    if isinstance(message.get("channel"), str): message["channel"] = get_channel(client, message["channel"])
+    if isinstance(message.get("user"), str): message["user"] = get_user(client, message["user"])
+    if isinstance(message.get("inviter"), str): message["inviter"] = get_user(client, message["inviter"])
+    print(json.dumps(message)); sys.stdout.flush() # log the message to stdout in JSON format
 def on_channel_created_message(client, message):
+    on_loggable_message(client, message)
     client.rtm_send_message(get_channel_id_by_name(client, "general"), "pls invit 2 #{}".format(message["channel"]["name"]))
-    print(json.dumps(message)); sys.stdout.flush()
+def on_text_message(client, message):
+    on_loggable_message(client, message)
+    if "subtype" not in message and isinstance(message.get("user"), str) and isinstance(message.get("channel"), str) and isinstance(message.get("text"), str) and isinstance(message.get("ts"), str):
+        process_chat_message(client, message["user"], get_channel_id_by_name(client, message["channel"]), message["text"], message["ts"])
 
 message_actions = {
     "hello":                   on_ignoreable_message,
     "pong":                    on_ignoreable_message,
-    "message":                 on_loggable_message,
+    "message":                 on_text_message,
     "user_typing":             on_ignoreable_message,
     "channel_marked":          on_ignoreable_message,
     "channel_created":         on_channel_created_message,
@@ -128,6 +137,7 @@ def main():
                     except Exception as e:
                         print("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:", file=sys.stderr); sys.stderr.flush()
                         import traceback; print(traceback.format_exc(), file=sys.stderr); sys.stderr.flush()
+                        print("[ERROR] MESSAGE CONTENTS:", message, file=sys.stderr); sys.stderr.flush()
                 else:
                     print("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT:", message, file=sys.stderr); sys.stderr.flush()
         
