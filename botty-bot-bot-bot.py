@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 
 import time, json, sys
+from datetime import datetime
 
 from slackclient import SlackClient
 
 from process_chat_message import process_chat_message
 
+def log(value):
+    print(datetime.now(), value, file=sys.stderr)
+    sys.stderr.flush() # this is needed if redirecting to files
+
 if len(sys.argv) != 2:
-    print("Usage: {} SLACK_BOT_TOKEN".format(sys.argv[0]))
+    log("Usage: {} SLACK_BOT_TOKEN".format(sys.argv[0]))
     sys.exit(1)
 
 SLACK_TOKEN = sys.argv[1]
@@ -122,10 +127,10 @@ message_actions = {
 
 def main():
     # connect to the Slack Realtime Messaging API
-    print("[INFO] CONNECTING TO SLACK REALTIME MESSAGING API...", file=sys.stderr); sys.stderr.flush()
+    log("[INFO] CONNECTING TO SLACK REALTIME MESSAGING API...")
     client = SlackClient(SLACK_TOKEN)
     if not client.rtm_connect(): raise ConnectionError("Could not connect to Slack Realtime Messaging API (possibly a bad token or network issue)")
-    print("[INFO] CONNECTED TO SLACK REALTIME MESSAGING API", file=sys.stderr); sys.stderr.flush()
+    log("[INFO] CONNECTED TO SLACK REALTIME MESSAGING API")
 
     last_ping = time.time()
     while True:
@@ -135,11 +140,11 @@ def main():
                     try: message_actions[message["type"]](client, message)
                     except KeyboardInterrupt: raise
                     except Exception as e:
-                        print("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:", file=sys.stderr); sys.stderr.flush()
-                        import traceback; print(traceback.format_exc(), file=sys.stderr); sys.stderr.flush()
-                        print("[ERROR] MESSAGE CONTENTS:", message, file=sys.stderr); sys.stderr.flush()
+                        log("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:")
+                        import traceback; log(traceback.format_exc())
+                        log("[ERROR] MESSAGE CONTENTS:")
                 else:
-                    print("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT:", message, file=sys.stderr); sys.stderr.flush()
+                    log("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT: {}".format(message))
         
         # ping the server periodically to make sure our connection is kept alive
         if time.time() - last_ping > 5:
@@ -153,8 +158,8 @@ if __name__ == "__main__":
         try: main() # start the main loop
         except KeyboardInterrupt: break
         except Exception as e:
-            print("[ERROR] MAIN LOOP THREW EXCEPTION:", file=sys.stderr); sys.stderr.flush()
-            import traceback; print(traceback.format_exc(), file=sys.stderr); sys.stderr.flush()
-            print("[INFO] RESTARTING IN 5 SECONDS...", file=sys.stderr); sys.stderr.flush()
+            log("[ERROR] MAIN LOOP THREW EXCEPTION:")
+            import traceback; log(traceback.format_exc())
+            log("[INFO] RESTARTING IN 5 SECONDS...")
             time.sleep(5)
-    print("[INFO] SHUTTING DOWN...", file=sys.stderr); sys.stderr.flush()
+    log("[INFO] SHUTTING DOWN...")
