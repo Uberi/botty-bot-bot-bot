@@ -113,10 +113,10 @@ message_actions = {
 
 def main():
     # connect to the Slack Realtime Messaging API
-    print("[INFO] CONNECTING TO SLACK REALTIME MESSAGING API...", file=sys.stderr)
+    print("[INFO] CONNECTING TO SLACK REALTIME MESSAGING API...", file=sys.stderr); sys.stderr.flush()
     client = SlackClient(SLACK_TOKEN)
     if not client.rtm_connect(): raise ConnectionError("Could not connect to Slack Realtime Messaging API (possibly a bad token or network issue)")
-    print("[INFO] CONNECTED TO SLACK REALTIME MESSAGING API", file=sys.stderr)
+    print("[INFO] CONNECTED TO SLACK REALTIME MESSAGING API", file=sys.stderr); sys.stderr.flush()
 
     last_ping = time.time()
     while True:
@@ -126,10 +126,10 @@ def main():
                     try: message_actions[message["type"]](client, message)
                     except KeyboardInterrupt: raise
                     except Exception as e:
-                        print("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:", file=sys.stderr)
-                        import traceback; print(traceback.format_exc(), file=sys.stderr)
+                        print("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:", file=sys.stderr); sys.stderr.flush()
+                        import traceback; print(traceback.format_exc(), file=sys.stderr); sys.stderr.flush()
                 else:
-                    print("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT:", message, file=sys.stderr)
+                    print("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT:", message, file=sys.stderr); sys.stderr.flush()
         
         # ping the server periodically to make sure our connection is kept alive
         if time.time() - last_ping > 5:
@@ -143,8 +143,8 @@ if __name__ == "__main__":
         try: main() # start the main loop
         except KeyboardInterrupt: break
         except Exception as e:
-            print("[ERROR] MAIN LOOP THREW EXCEPTION:", file=sys.stderr)
-            import traceback; print(traceback.format_exc(), file=sys.stderr)
-            print("[INFO] RESTARTING IN 5 SECONDS...", file=sys.stderr)
+            print("[ERROR] MAIN LOOP THREW EXCEPTION:", file=sys.stderr); sys.stderr.flush()
+            import traceback; print(traceback.format_exc(), file=sys.stderr); sys.stderr.flush()
+            print("[INFO] RESTARTING IN 5 SECONDS...", file=sys.stderr); sys.stderr.flush()
             time.sleep(5)
-    print("[INFO] SHUTTING DOWN...", file=sys.stderr)
+    print("[INFO] SHUTTING DOWN...", file=sys.stderr); sys.stderr.flush()
