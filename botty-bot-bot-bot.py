@@ -44,8 +44,8 @@ def on_loggable_message(client, message):
     # download message files if present
     if "file" in message: download_file(message["file"]["id"] + " - " + message["file"]["name"], message["file"]["url_download"])
     if "channel" in message and isinstance(message["channel"], str): message["channel"] = get_channel(client, message["channel"])
-    if "user" in message: message["user"] = get_user(client, message["user"])
-    if "inviter" in message: message["inviter"] = get_user(client, message["inviter"])
+    if "user" in message and isinstance(message["user"], str): message["user"] = get_user(client, message["user"])
+    if "inviter" in message and isinstance(message["inviter"], str): message["inviter"] = get_user(client, message["inviter"])
     print(json.dumps(message)); sys.stdout.flush()
 def on_channel_created_message(client, message):
     client.rtm_send_message(get_channel_id_by_name(client, "general"), "pls invit 2 #{}".format(message["channel"]["name"]))
@@ -111,22 +111,40 @@ message_actions = {
     "team_migration_started":  on_ignoreable_message,
 }
 
-# connect to the Slack Realtime Messaging API
-client = SlackClient(SLACK_TOKEN)
-if not client.rtm_connect(): raise ConnectionError("Could not connect to Slack Realtime Messaging API")
+def main():
+    # connect to the Slack Realtime Messaging API
+    print("[INFO] CONNECTING TO SLACK REALTIME MESSAGING API...", file=sys.stderr)
+    client = SlackClient(SLACK_TOKEN)
+    if not client.rtm_connect(): raise ConnectionError("Could not connect to Slack Realtime Messaging API (possibly a bad token or network issue)")
+    print("[INFO] CONNECTED TO SLACK REALTIME MESSAGING API", file=sys.stderr)
 
-last_ping = time.time()
-while True:
-    for message in client.rtm_read():
-        if "type" in message:
-            if message["type"] in message_actions:
-                message_actions[message["type"]](client, message)
-            else:
-                print("UNKNOWN INCOMING MESSAGE FORMAT:", message)
-    
-    # ping the server to make sure our connection is kept alive
-    if time.time() - last_ping > 5:
-        client.server.ping()
-        last_ping = time.time()
-    
-    time.sleep(1) # 1 message per second is the upper limit for message sending before being disconnected
+    last_ping = time.time()
+    while True:
+        for message in client.rtm_read():
+            if "type" in message:
+                if message["type"] in message_actions:
+                    try: message_actions[message["type"]](client, message)
+                    except KeyboardInterrupt: raise
+                    except Exception as e:
+                        print("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:", file=sys.stderr)
+                        import traceback; print(traceback.format_exc())
+                else:
+                    print("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT:", message)
+        
+        # ping the server periodically to make sure our connection is kept alive
+        if time.time() - last_ping > 5:
+            client.server.ping()
+            last_ping = time.time()
+        
+        time.sleep(1) # 1 message per second is the upper limit for message sending before being disconnected
+
+if __name__ == "__main__":
+    while True:
+        try: main() # start the main loop
+        except KeyboardInterrupt: break
+        except Exception as e:
+            print("[ERROR] MAIN LOOP THREW EXCEPTION:", file=sys.stderr)
+            import traceback; print(traceback.format_exc())
+            print("[INFO] RESTARTING IN 5 SECONDS...", file=sys.stderr)
+            time.sleep(5)
+    print("[INFO] SHUTTING DOWN...")
