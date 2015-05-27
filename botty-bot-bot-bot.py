@@ -20,6 +20,7 @@ SLACK_TOKEN = sys.argv[1]
 def download_file(name, url):
     import urllib.request, shutil, os
     path = os.path.join("files", name)
+    os.makedirs(os.path.dirname(path))
     with urllib.request.urlopen(url) as response, open(path, "wb") as out_file:
         shutil.copyfileobj(response, out_file)
 
@@ -142,7 +143,7 @@ def main():
                     except Exception as e:
                         log("[ERROR] MESSAGE PROCESSING THREW EXCEPTION:")
                         import traceback; log(traceback.format_exc())
-                        log("[ERROR] MESSAGE CONTENTS:")
+                        log("[ERROR] MESSAGE CONTENTS: {}".format(message))
                 else:
                     log("[ERROR] UNKNOWN INCOMING MESSAGE FORMAT: {}".format(message))
         
