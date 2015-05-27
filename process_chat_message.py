@@ -14,9 +14,12 @@ log("[INFO] LOADING CONVERSATION DATA...")
 try: data = json.load(open("normalized_data.json", "r"))
 except: data = []
 log("[INFO] TRAINING MARKOV MODEL...")
-markov = Markov(2) # Markov model with 2 word look-behind
-for message in Markov.tokenize_words(m[2] for m in data):
-    markov.train(message)
+try:
+    markov = Markov(2) # Markov model with 2 word look-behind
+    for message in Markov.tokenize_words(m[2] for m in data):
+        markov.train(message)
+except:
+    import traceback; log(traceback.format_exc())
 log("[INFO] MARKOV MODEL TRAINING COMPLETE")
 
 def generate_sentence_starting_with(first_part = ""):
