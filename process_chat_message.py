@@ -4,12 +4,19 @@ from markov import Markov
 
 import wikipedia
 
+def log(value):
+    print(datetime.now(), value, file=sys.stderr)
+    sys.stderr.flush() # this is needed if redirecting to files
+
 # train a Markov model on the given chat data
+log("[INFO] LOADING CONVERSATION DATA...")
 try: data = json.load(open("normalized_data.json", "r"))
 except: data = []
+log("[INFO] TRAINING MARKOV MODEL...")
 markov = Markov(2) # Markov model with 2 word look-behind
 for message in Markov.tokenize_words(m[2] for m in data):
     markov.train(message)
+log("[INFO] MARKOV MODEL TRAINING COMPLETE")
 
 def generate_sentence_starting_with(first_part = ""):
     first_part = first_part.strip()
