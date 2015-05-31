@@ -43,12 +43,11 @@ class Markov:
         
         # generate a message based on probability chains
         current_key = tuple(initial_state)[-self.lookbehind_length:]
-        if current_key not in self.chain: raise KeyError("Key not in chain: {}".format(current_key))
-        choices = self.chain[current_key] # choices at the start of a string
         token_list = []
         while True:
             # pick a random token weighted on the number of times it has occurred previously
-            if current_key not in self.counts: raise KeyError("Key not in chain: {}".format(current_key))
+            if current_key not in self.chain: raise KeyError("Key not in chain: {}".format(current_key))
+            choices = self.chain[current_key]
             random_choice = random.randrange(0, self.counts[current_key])
             for current_choice, occurrences in choices.items():
                 random_choice -= occurrences
@@ -64,6 +63,4 @@ class Markov:
 
             if len(current_key) < self.lookbehind_length: current_key += (new_token,) # add current token to key if just starting
             else: current_key = current_key[1:] + (new_token,) # shift token onto key if inside message
-
-            choices = self.chain[current_key]
         return token_list
