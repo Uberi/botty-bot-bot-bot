@@ -33,7 +33,7 @@ def process_text_message(client, user_id, channel_id, text, timestamp):
     if result:
         query = result.group(1)
         try: send(client, channel_id, generate_sentence_starting_with(markov, query))
-        except: pass
+        except: send(client, channel_id, generate_sentence_starting_with(markov))
         return
     if random.random() < 0.01: # random chance of responding
         try: send(client, channel_id, generate_sentence_starting_with(markov, text))
