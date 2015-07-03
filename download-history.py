@@ -48,6 +48,7 @@ def main():
     response = json.loads(client.api_call("users.list").decode("utf-8"))
     with open(os.path.join(meta_folder, "users.json"), "w") as f: json.dump(response["members"], f, sort_keys=True, indent=2)
     
+    total_new_messages = 0
     for channel, channel_id in channels.items():
         message_file_path = os.path.join(SAVE_FOLDER, "{}.json".format(channel))
         
@@ -78,15 +79,19 @@ def main():
         
         print("DOWNLOADED {} NEW MESSAGES IN #{}".format(len(messages), channel))
         
-        with open(message_file_path, "a") as f:
-            for message in messages:
-                f.write(json.dumps(message, sort_keys=True) + "\n")
-        
         # download message files where applicable
         for message in messages:
             if "file" not in message: continue
             file_entry = message["file"]
+            if "url_download" not in file_entry: continue # files like Google docs and such
             print("DOWNLOADING FILE \"{}\" (ID {}) IN #{}".format(file_entry["name"], file_entry["id"], channel))
             download_file("{} - {}".format(file_entry["id"], file_entry["name"]), file_entry["url_download"])
+        
+        with open(message_file_path, "a") as f:
+            for message in messages:
+                f.write(json.dumps(message, sort_keys=True) + "\n")
+        
+        total_new_messages += len(messages)
+    print("DOWNLOADED {} NEW MESSAGES IN ALL CHANNELS".format(total_new_messages))
 
 if __name__ == "__main__": main()
