@@ -14,7 +14,7 @@ from plugins.generate_text import GenerateTextPlugin
 from plugins.haiku import HaikuPlugin
 from plugins.personality import PersonalityPlugin
 
-LOG_LEVEL = logging.WARNING
+LOG_LEVEL = logging.INFO
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
@@ -46,7 +46,7 @@ class Botty(Bot):
             if plugin.on_step(): break
 
     def on_message(self, message):
-        self.logger.info("received message message {}".format(message))
+        self.logger.debug("received message message {}".format(message))
         if isinstance(message.get("channel"), str): # store the channel ID so responding can work
             self.last_message_channel_id = message["channel"]
         for plugin in self.plugins:

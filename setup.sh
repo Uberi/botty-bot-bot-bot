@@ -7,6 +7,7 @@ sudo apt-get install python3-pip
 sudo pip3 install git+git://github.com/slackhq/python-slackclient.git
 
 # modules used by plugins
+sudo apt-get install python3-dateutil
 sudo pip3 install wikipedia
 sudo pip3 install recurrent
 sudo pip3 install sympy
