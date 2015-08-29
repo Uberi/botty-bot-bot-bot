@@ -13,7 +13,7 @@ class BigTextPlugin(BasePlugin):
     def on_message(self, message):
         text = self.get_text_message_body(message)
         if text is None: return False
-        match = re.search(r"^\s*\bembiggenify\s+(.{1,20})", text, re.IGNORECASE)
+        match = re.search(r"^\s*\bembiggenify\s+(.{1,40})", text, re.IGNORECASE)
         if not match: return False
         query = match.group(1)
 
