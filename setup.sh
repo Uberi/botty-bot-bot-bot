@@ -11,3 +11,4 @@ sudo apt-get install python3-dateutil
 sudo pip3 install wikipedia
 sudo pip3 install recurrent
 sudo pip3 install sympy
+sudo pip3 install pyfiglet

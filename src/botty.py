@@ -13,6 +13,7 @@ from plugins.wiki import WikiPlugin
 from plugins.generate_text import GenerateTextPlugin
 from plugins.haiku import HaikuPlugin
 from plugins.personality import PersonalityPlugin
+from plugins.big_text import BigTextPlugin
 
 LOG_LEVEL = logging.INFO
 
@@ -68,5 +69,6 @@ if __name__ == "__main__":
     botty.register_plugin(HaikuPlugin(botty))
     botty.register_plugin(PersonalityPlugin(botty))
     botty.register_plugin(GenerateTextPlugin(botty))
+    botty.register_plugin(BigTextPlugin(botty))
 
     botty.start_loop()

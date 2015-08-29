@@ -30,6 +30,7 @@ class PersonalityPlugin(BasePlugin):
                 "say `poll start DESCRIPTION` if y'all gotta decide something\n"
                 "say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders\n"
                 "say `botty unremind DESCRIPTION` if you don't\n"
+                "say `embiggenify TEXT` if your typing is too quiet\n"
                 "say `thanks botty`, just because you should\n"
             )
             return True
