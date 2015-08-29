@@ -1,4 +1,6 @@
 @history/
+.ipynb_checkpoints/
+*-custom.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

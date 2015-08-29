@@ -77,7 +77,8 @@ def main():
         while i < len(messages) and float(messages[i]["ts"]) <= existing_newest_message_time: i += 1
         messages = messages[i:]
         
-        print("DOWNLOADED {} NEW MESSAGES IN #{}".format(len(messages), channel))
+        if messages:
+            print("DOWNLOADED {} NEW MESSAGES IN #{}".format(len(messages), channel))
         
         # download message files where applicable
         for message in messages:

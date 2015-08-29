@@ -6,5 +6,7 @@ sudo apt-get install python3-pip
 #sudo pip3 install slackclient
 sudo pip3 install git+git://github.com/slackhq/python-slackclient.git
 
-# modules used by the chat commands processor
+# modules used by plugins
 sudo pip3 install wikipedia
+sudo pip3 install recurrent
+sudo pip3 install sympy

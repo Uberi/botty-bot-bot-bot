@@ -4,8 +4,8 @@ from collections import defaultdict
 class Markov:
     PUNCTUATION = r"[`~@#$%_\\'+\-/]" # punctuation that is a part of text
     STANDALONE = r"(?:[!.,;()^&\[\]{}|*=<>?]|[dDpP][:8]|:\S)" # standalone characters or emoticons that wouldn't otherwise be captured
-    PATTERN = STANDALONE + r"\S*|https?://\S+|(?:\w|" + PUNCTUATION + r")+" # token pattern
-    word_matcher = re.compile(PATTERN, re.IGNORECASE)
+    WORD_PATTERN = STANDALONE + r"\S*|https?://\S+|(?:\w|" + PUNCTUATION + r")+" # token pattern
+    word_matcher = re.compile(WORD_PATTERN, re.IGNORECASE)
 
     def __init__(self, lookbehind_length = 2):
         self.lookbehind_length = lookbehind_length
@@ -14,8 +14,8 @@ class Markov:
         self.counts = defaultdict(int)
 
     @staticmethod
-    def tokenize_words(data):
-        return ([m.lower() for m in Markov.word_matcher.findall(entry)] for entry in data)
+    def tokenize_text(text):
+        return [m.lower() for m in Markov.word_matcher.findall(text)]
     @staticmethod
     def format_words(token_list): # formats a list of words into a human-readable sentence string
         close_matcher = re.compile("[!.,;:)\]}?]", re.IGNORECASE)
