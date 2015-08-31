@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import re
+import re, random
 from collections import defaultdict
 
 from .utilities import BasePlugin
@@ -9,15 +9,14 @@ class PersonalityPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
         
-        self.channel_last_message = {} # mapping from channel IDs to the last message in that channel
-        self.channel_last_message_repetitions = {} # mapping from channel IDs to the number of times the last message has been repeated
+        self.last_entries = {} # mapping from channel IDs to [last message in that channel, sender of last message, number of repetitions]
         self.message_repeated_threshold = 2 # minimum number of message repeats in a channel before we repeat it as well
 
     def on_message(self, message):
         text = self.get_text_message_body(message)
         if text is None: return False
-        if "channel" not in message: return False
-        channel = message["channel"]
+        if "channel" not in message or "user" not in message: return False
+        channel, user = message["channel"], message["user"]
 
         if re.search(r"\bbotty\s+(?:help|halp|\?+)\b", text, re.IGNORECASE):
             self.respond(
@@ -36,17 +35,17 @@ class PersonalityPlugin(BasePlugin):
             return True
 
         if re.search(r"\b(?:thanks|thx|ty)\b.*\bbotty\b", text, re.IGNORECASE):
-            self.respond("np")
+            self.respond(random.choice("np", "np br0", "no prob", "don't mention it"))
             return True
 
-        # repeat this message if other people are repeating it
-        if text == self.channel_last_message.get(channel):
-            self.channel_last_message_repetitions[channel] += 1
-            if self.channel_last_message_repetitions[channel] >= self.message_repeated_threshold:
-                self.respond(text) # repeat the message
-                del self.channel_last_message[channel]
-                del self.channel_last_message_repetitions[channel]
+        # compute the number of times different people have repeated it
+        if channel in self.last_entries and text == self.last_entries[channel][0] and user != self.last_entries[channel][1]:
+            self.last_entries[channel][2] += 1
         else:
-            self.channel_last_message_repetitions[channel] = 1
-            self.channel_last_message[channel] = text
+            self.last_entries[channel] = [text, user, 1]
+
+        # repeat this message if other people have repeated it enough times
+        if self.last_entries[channel][2] >= self.message_repeated_threshold:
+            self.respond(text) # repeat the message
+            del self.last_entries[channel]
         return False
