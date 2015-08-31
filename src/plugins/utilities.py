@@ -37,3 +37,4 @@ class BasePlugin:
     def get_channel_id_by_name(self, channel_name): return self.bot.get_channel_id_by_name(channel_name)
     def get_user_id_by_name(self, user_name): return self.bot.get_user_id_by_name(user_name)
     def get_user_name_by_id(self, user_id): return self.bot.get_user_name_by_id(user_id)
+    def get_direct_message_channel_id_by_user_id(self, user_id): return self.bot.get_direct_message_channel_id_by_user_id(user_id)
