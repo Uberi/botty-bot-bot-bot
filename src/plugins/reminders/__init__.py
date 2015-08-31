@@ -33,9 +33,9 @@ class RemindersPlugin(BasePlugin):
             self.reminders = []
 
     def on_step(self):
-        # check reminders no more than once every 30 seconds
+        # check reminders no more than once every 10 seconds
         current_time = time.time()
-        if current_time - self.last_reminder_check_time < 30: return False
+        if current_time - self.last_reminder_check_time < 10: return False
         self.last_reminder_check_time = current_time
 
         now = datetime.now()
@@ -61,16 +61,29 @@ class RemindersPlugin(BasePlugin):
     def on_message(self, message):
         text = self.get_text_message_body(message)
         if text is None: return False
+        if "channel" not in message or "user" not in message: return False
+        channel, user = message["channel"], message["user"]
+
+        # reminder setting command
         match = re.search(r"^\s*\bbotty[\s,\.]+remind\s+(\S+)\s+(.*?):\s+(.*)", text, re.IGNORECASE)
         if match:
-            channel_name = match.group(1)
+            target_name = match.group(1).strip()
             occurrences = match.group(2).strip()
             description = match.group(3).strip()
 
-            # ensure channel is valid
-            if self.get_channel_id_by_name(channel_name) is None:
-                self.respond("what kind of channel is \"{}\" anyway".format(channel_name))
-                return True
+            # validate channel ID
+            if target_name == "me": target_name = self.get_user_name_by_id(user)
+            target = self.get_channel_id_by_name(target_name)
+            if target is None: # not a channel/private group/direct message
+                target_user = self.get_user_id_by_name(target_name)
+                if target_user is None: # not a user
+                    self.respond("what kind of channel or user is \"{}\" anyway".format(target_name))
+                    return True
+                direct_message_channel = self.get_direct_message_channel_id_by_user_id(target_user)
+                if direct_message_channel is None:
+                    self.respond("there's no direct messaging with \"{}\"".format(target_name))
+                    return True
+                target = direct_message_channel
 
             # parse event occurrences
             try:
@@ -82,19 +95,20 @@ class RemindersPlugin(BasePlugin):
                 return True
 
             if isinstance(rrule_or_datetime, datetime): # single occurrence reminder
-                self.reminders.append([rrule_or_datetime, None, channel_name, description])
-                self.respond("reminder for \"{}\" set at {}".format(description, rrule_or_datetime))
+                self.reminders.append([rrule_or_datetime, None, target, description])
+                self.respond("{}'s reminder for \"{}\" set at {}".format(target_name, description, rrule_or_datetime))
             else: # repeating reminder
                 rrule = dateutil.rrule.rrulestr(rrule_or_datetime)
                 next_occurrence = rrule.after(datetime.now())
                 if next_occurrence is None:
                     self.respond("\"{}\" will never trigger, rrule is {}".format(occurrences, rrule_or_datetime))
                     return True
-                self.reminders.append([next_occurrence, rrule_or_datetime, channel_name, description])
-                self.respond("recurring reminder for \"{}\" set, next reminder is at {}".format(description, next_occurrence))
+                self.reminders.append([next_occurrence, rrule_or_datetime, target, description])
+                self.respond("{}'s recurring reminder for \"{}\" set, next reminder is at {}".format(target_name, description, next_occurrence))
             self.save_reminders(self.reminders)
             return True
 
+        # reminder unsetting command
         match = re.search(r"^\s*\bbotty[\s,\.]+(?:unremind|stop\s+reminding\s+(?:us\s+)?about|stop\s+reminders?\s+for)\s+(.*)", text, re.IGNORECASE)
         if match:
             description = match.group(1).strip()
@@ -106,14 +120,15 @@ class RemindersPlugin(BasePlugin):
                 self.respond("there was already no reminder for \"{}\"".format(description))
             self.reminders = new_reminders
             return True
-        
+
         return False
 
     def remind(self, occurrence_time, next_occurrence, channel, description):
+        if self.get_channel_name_by_id(channel) is None: return # target no longer exists, it was probably removed
         if next_occurrence is None:
-            self.say(self.get_channel_id_by_name(channel), "*REMINDER:* {}".format(description))
+            self.say(channel, "*REMINDER:* {}".format(description))
         else:
-            self.say(self.get_channel_id_by_name(channel), "*REMINDER (NEXT REMINDER SET TO {}):* {}".format(next_occurrence, description))
+            self.say(channel, "*REMINDER (NEXT REMINDER SET TO {}):* {}".format(next_occurrence, description))
     
     def save_reminders(self, reminders):
         self.logger.info("saving {} reminders...".format(len(self.reminders)))
