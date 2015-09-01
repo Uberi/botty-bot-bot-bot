@@ -19,7 +19,7 @@ class PersonalityPlugin(BasePlugin):
         channel, user = message["channel"], message["user"]
 
         if re.search(r"\bbotty\s+(?:help|halp|\?+)\b", text, re.IGNORECASE):
-            self.respond(
+            self.respond_raw(
                 "botty's got you covered yo\n"
                 "say `botty help` to get a light bedtime read\n"
                 "say `calc SYMPY_EXPRESSION` to do some math\n"
@@ -35,7 +35,7 @@ class PersonalityPlugin(BasePlugin):
             return True
 
         if re.search(r"\b(?:thanks|thx|ty)\b.*\bbotty\b", text, re.IGNORECASE):
-            self.respond(random.choice("np", "np br0", "no prob", "don't mention it"))
+            self.respond_raw(random.choice(["np", "np br0", "no prob", "don't mention it", "anytime"]))
             return True
 
         # compute the number of times different people have repeated it

@@ -5,7 +5,7 @@ import logging
 
 #wip: interactive admin console running in a background thread
 
-from bot import Bot
+from bot import SlackBot
 from plugins.arithmetic import ArithmeticPlugin
 from plugins.poll import PollPlugin
 from plugins.reminders import RemindersPlugin
@@ -28,12 +28,12 @@ if __name__ == "__main__":
 
     logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
     if len(sys.argv) < 2: # no Slack token specified, use debug mode
-        from bot import DebugBot as Bot
+        from bot import SlackDebugBot as SlackBot
         SLACK_TOKEN = ""
     else:
         SLACK_TOKEN = sys.argv[1]
 
-class Botty(Bot):
+class Botty(SlackBot):
     def __init__(self, token):
         super().__init__(token)
         self.plugins = []
@@ -51,7 +51,9 @@ class Botty(Bot):
         if isinstance(message.get("channel"), str): # store the channel ID so responding can work
             self.last_message_channel_id = message["channel"]
         for plugin in self.plugins:
-            if plugin.on_message(message): break
+            if plugin.on_message(message):
+                self.logger.info("message handled by {}: {}".format(plugin.__class__.__name__, message))
+                break
 
     def respond(self, text):
         """Say `text` in the channel that most recently received a message."""

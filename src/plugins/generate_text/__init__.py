@@ -17,7 +17,7 @@ class GenerateTextPlugin(BasePlugin):
                 for entry in f:
                     text = self.get_text_message_body(json.loads(entry))
                     if text is not None:
-                        self.markov.train(Markov.tokenize_text(text))
+                        self.markov.train(Markov.tokenize_text(self.sendable_text_to_text(text)))
         self.logger.info("Markov model training complete")
 
     def on_message(self, message):
@@ -25,11 +25,11 @@ class GenerateTextPlugin(BasePlugin):
         if text is None: return False
         match = re.search(r"\bbotty[\s,\.]+(.*)", text, re.IGNORECASE)
         if not match: return False
-        query = match.group(1)
+        query = self.sendable_text_to_text(match.group(1))
 
         # use markov chain to complete given phrase
-        try: self.respond(self.generate_sentence_starting_with(self.markov, query))
-        except KeyError: self.respond(self.generate_sentence_starting_with(self.markov))
+        try: self.respond_raw(self.generate_sentence_starting_with(self.markov, query))
+        except KeyError: self.respond_raw(self.generate_sentence_starting_with(self.markov))
         return True
 
     # load Markov conversation model

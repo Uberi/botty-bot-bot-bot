@@ -9,6 +9,8 @@ import dateutil.rrule
 
 from ..utilities import BasePlugin
 
+# use this with a command like "botty remind #music every monday at 3pm: :fire: :fire: :fire: NEW NOON PACIFIC MIXTAPE IS OUT :fire: :fire: :fire:"
+
 SAVED_REMINDERS_FILE = path.join(path.dirname(path.realpath(__file__)), "saved_reminders.json")
 
 class RemindersPlugin(BasePlugin):
@@ -96,20 +98,20 @@ class RemindersPlugin(BasePlugin):
 
             if isinstance(rrule_or_datetime, datetime): # single occurrence reminder
                 self.reminders.append([rrule_or_datetime, None, target, description])
-                self.respond("{}'s reminder for \"{}\" set at {}".format(target_name, description, rrule_or_datetime))
+                self.respond("{}'s reminder for \"{}\" set at {}".format(target_name, description, self.text_to_sendable_text(str(rrule_or_datetime))))
             else: # repeating reminder
                 rrule = dateutil.rrule.rrulestr(rrule_or_datetime)
                 next_occurrence = rrule.after(datetime.now())
                 if next_occurrence is None:
-                    self.respond("\"{}\" will never trigger, rrule is {}".format(occurrences, rrule_or_datetime))
+                    self.respond("\"{}\" will never trigger, rrule is {}".format(occurrences, self.text_to_sendable_text(rrule_or_datetime)))
                     return True
                 self.reminders.append([next_occurrence, rrule_or_datetime, target, description])
-                self.respond("{}'s recurring reminder for \"{}\" set, next reminder is at {}".format(target_name, description, next_occurrence))
+                self.respond("{}'s recurring reminder for \"{}\" set, next reminder is at {}".format(target_name, description, self.text_to_sendable_text(str(next_occurrence))))
             self.save_reminders(self.reminders)
             return True
 
         # reminder unsetting command
-        match = re.search(r"^\s*\bbotty[\s,\.]+(?:unremind|stop\s+reminding\s+(?:us\s+)?about|stop\s+reminders?\s+for)\s+(.*)", text, re.IGNORECASE)
+        match = re.search(r"^\s*\bbotty[\s,\.]+(?:unremind|stop\s+reminding\s+(?:(?:us|me|them)\s+)?about|stop\s+reminders?\s+for)\s+(.*)", text, re.IGNORECASE)
         if match:
             description = match.group(1).strip()
             new_reminders = [r for r in self.reminders if r[3] != description]
@@ -117,7 +119,7 @@ class RemindersPlugin(BasePlugin):
                 self.respond("removed reminder for \"{}\"".format(description))
                 self.save_reminders(new_reminders)
             else:
-                self.respond("there was already no reminder for \"{}\"".format(description))
+                self.respond("there were already no reminders for \"{}\"".format(description))
             self.reminders = new_reminders
             return True
 
@@ -128,7 +130,7 @@ class RemindersPlugin(BasePlugin):
         if next_occurrence is None:
             self.say(channel, "*REMINDER:* {}".format(description))
         else:
-            self.say(channel, "*REMINDER (NEXT REMINDER SET TO {}):* {}".format(next_occurrence, description))
+            self.say(channel, "*REMINDER (NEXT REMINDER SET TO {}):* {}".format(self.text_to_sendable_text(str(next_occurrence)), description))
     
     def save_reminders(self, reminders):
         self.logger.info("saving {} reminders...".format(len(self.reminders)))
@@ -143,6 +145,3 @@ class RemindersPlugin(BasePlugin):
         ]
         with open(SAVED_REMINDERS_FILE, "w") as f:
             json.dump(entries, f, sort_keys=True, indent=4, separators=(",", ": "))
-
-if __name__ == "__main__":
-    "botty remind #music every monday at 3pm: :fire: :fire: :fire: NEW NOON PACIFIC MIXTAPE IS OUT :fire: :fire: :fire:"

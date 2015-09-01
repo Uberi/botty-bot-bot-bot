@@ -61,7 +61,7 @@ class HaikuPlugin(BasePlugin):
         if not re.search(r"\bpls\s+haiku\s+me\b", text, re.IGNORECASE): return False
 
         # generate haiku
-        self.respond("```\n{}\n{}\n{}\n```".format(
+        self.respond_raw("```\n{}\n{}\n{}\n```".format(
             random.choice(self.five_syllable_messages),
             random.choice(self.seven_syllable_messages),
             random.choice(self.five_syllable_messages)

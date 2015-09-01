@@ -7,7 +7,7 @@ import logging
 
 from slackclient import SlackClient
 
-class Bot:
+class SlackBot:
     def __init__(self, token, logger=None):
         assert isinstance(token, str), "`token` must be a valid Slack API token"
         assert logger is None or not isinstance(logger, logging.Logger), "`logger` must be `None` or a logging function"
@@ -133,7 +133,53 @@ class Bot:
             if entry["user"] == user_id: return entry["id"]
         return None
 
-class DebugBot:
+    def server_text_to_sendable_text(self, server_text):
+        """Returns `server_text`, a string in Slack server message format, converted into a string in Slack sendable message format."""
+        assert isinstance(server_text, str), "`server_text` must be a string rather than \"{}\"".format(server_text)
+        text_without_special_sequences = re.sub(r"<[^<>]*>", "", server_text)
+        assert "<" not in text_without_special_sequences and ">" not in text_without_special_sequences, "Invalid special sequence in server text \"{}\", perhaps some text needs to be escaped"
+
+        # process link references
+        def process_special_sequence(match):
+            original, body = match.group(0), match.group(1).split("|")[0]
+            if body.startswith("#C"): return original # channel reference, should send unchanged
+            if body.startswith("@U"): return original # user reference, should send unchanged
+            if body.startswith("!"): return original # special command, should send unchanged
+            return body # link, should remove angle brackets and label in order to allow it to linkify
+        return re.sub(r"<(.*?)>", process_special_sequence, server_text)
+
+    def text_to_sendable_text(self, text):
+        """Returns `text`, a plain text string, converted into a string in Slack sendable message format."""
+        assert isinstance(text, str), "`text` must be a string rather than \"{}\"".format(text)
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    def sendable_text_to_text(self, sendable_text):
+        """Returns `sendable_text`, a string in Slack sendable message format, converted into a plain text string. The transformation can lose some information for escape sequences, such as link labels."""
+        assert isinstance(sendable_text, str), "`sendable_text` must be a string rather than \"{}\"".format(sendable_text)
+        text_without_special_sequences = re.sub(r"<[^<>]*>", "", sendable_text)
+        assert "<" not in text_without_special_sequences and ">" not in text_without_special_sequences, "Invalid special sequence in sendable text \"{}\", perhaps some text needs to be escaped"
+
+        # process link references
+        def process_special_sequence(match):
+            original, body = match.group(0), match.group(1).split("|")[0]
+            if body.startswith("#C"): # channel reference
+                channel_name = self.get_channel_name_by_id(body)
+                if channel_name is None: return ""
+                return "#" + channel_name
+            if body.startswith("@U"): # user reference
+                user_name = self.get_user_name_by_id(body)
+                if user_name is None: return ""
+                return "@" + user_name
+            if body.startswith("!"): # special command
+                if body == "!channel": return "@channel"
+                if body == "!group": return "@group"
+                if body == "!everyone": return "@everyone"
+            return original
+        raw_text = re.sub(r"<(.*?)>", process_special_sequence, sendable_text)
+
+        return raw_text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
+class SlackDebugBot(SlackBot):
     def __init__(self, token, logger=None):
         assert isinstance(token, str), "`token` must be a valid Slack API token"
         assert logger is None or not isinstance(logger, logging.Logger), "`logger` must be `None` or a logging function"
@@ -141,8 +187,6 @@ class DebugBot:
         if logger is None: self.logger = logging.getLogger(self.__class__.__name__)
         else: self.logger = logger
 
-    def on_step(self): pass
-    def on_message(self, message): pass
     def start_loop(self): self.start()
 
     def start(self):
@@ -160,7 +204,7 @@ class DebugBot:
                     "type": "message",
                     "channel": channel_name,
                     "user": "Me",
-                    "text": text,
+                    "text": self.text_to_sendable_text(text),
                     "ts": str(time.time()),
                 })
                 incoming_message_queue.join()

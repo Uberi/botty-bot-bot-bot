@@ -37,18 +37,23 @@ class ArithmeticPlugin(BasePlugin):
         if text is None: return False
         match = re.search(r"^\s*\b(?:ca(?:lc(?:ulate)?)?|eval(?:uate)?)\s+(.+)", text, re.IGNORECASE)
         if not match: return False
-        query = match.group(1)
+        query = self.sendable_text_to_text(match.group(1)) # get query as plain text in order to make things like < and > work (these are usually escaped)
 
         expression = evaluate_with_time_limit(query)
         if isinstance(expression, Exception): # evaluation resulted in error
-            self.respond("bad expression, {}".format(expression))
+            self.respond_raw("bad expression, {}".format(expression))
         elif expression is None: # evaluation timed out
-            self.respond("tl;dr")
+            self.respond_raw("tl;dr")
         else: # evaluation completed successfully
             if hasattr(expression, "evalf") and not isinstance(expression, numbers.Integer) and not isinstance(expression, numbers.Float):
-                self.respond("{} -> {} ({})".format(query, expression, expression.evalf(80)))
+                value = expression.evalf(80)
+                if value == sympy.zoo: formatted_value = "(complex infinity)"
+                elif value == sympy.oo: formatted_value = "\u221e"
+                else: formatted_value = str(value)
+                if str(value) == str(expression) or str(query) == str(expression): self.respond_raw("{} :point_right: {}".format(query, formatted_value))
+                else: self.respond_raw("{} :point_right: {} :point_right: {}".format(query, expression, formatted_value))
             else:
-                self.respond("{} -> {}".format(query, expression))
+                self.respond_raw("{} :point_right: {}".format(query, expression))
         return True
 
 if __name__ == "__main__":

@@ -47,5 +47,5 @@ class BigTextPlugin(BasePlugin):
         ]
         random_font = random.choice(good_fonts)
         f = Figlet(font=random_font)
-        self.respond("```\n{}\n```".format(f.renderText(query)))
+        self.respond_raw("```{}```".format(f.renderText(query).rstrip()))
         return True

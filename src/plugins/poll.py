@@ -42,12 +42,12 @@ class PollPlugin(BasePlugin):
                 channel = new_channel
 
             if channel not in self.current_polls:
-                self.respond("there's no poll going on right now in {}".format(self.get_channel_name_by_id(channel)))
+                self.respond_raw("there's no poll going on right now in {}".format(self.get_channel_name_by_id(channel)))
                 return True
 
             user_name = self.get_user_name_by_id(user)
             if user_name in self.current_polls[channel][3]:
-                self.respond("nice try {}".format(user_name))
+                self.respond_raw("nice try {}".format(user_name))
                 return True
             self.current_polls[channel][3].add(user_name)
 
@@ -61,7 +61,7 @@ class PollPlugin(BasePlugin):
         match = re.search(r"^\s*\bpoll\s+(?:close|finish|done|status|complete|ready|stop)\b", text, re.IGNORECASE)
         if match:
             if channel not in self.current_polls:
-                self.respond("there's no poll going on right now in {}".format(self.get_channel_name_by_id(channel)))
+                self.respond_raw("there's no poll going on right now in {}".format(self.get_channel_name_by_id(channel)))
                 return True
 
             poll = self.current_polls[channel]
