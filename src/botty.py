@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
-import logging
-
-#wip: interactive admin console running in a background thread
+import sys, logging
 
 from bot import SlackBot
 from plugins.arithmetic import ArithmeticPlugin
@@ -15,23 +12,23 @@ from plugins.haiku import HaikuPlugin
 from plugins.personality import PersonalityPlugin
 from plugins.big_text import BigTextPlugin
 
-LOG_LEVEL = logging.INFO
+if len(sys.argv) > 2:
+    print("Usage: {} [SLACK_BOT_TOKEN]".format(sys.argv[0]))
+    print("    Start the Botty chatbot for Slack.")
+    print("    SLACK_BOT_TOKEN is a Slack API token, which can be obtained from https://api.slack.com/.")
+    print("    If SLACK_BOT_TOKEN is omitted, Botty starts in debug mode with a console interface for testing purposes.")
+    print("    Otherwise, Botty connects to the Slack chat associated with SLACK_BOT_TOKEN.")
+    sys.exit(1)
 
-if __name__ == "__main__":
-    if len(sys.argv) > 2:
-        print("Usage: {} [SLACK_BOT_TOKEN]".format(sys.argv[0]))
-        print("    Start the Botty chatbot for Slack.")
-        print("    SLACK_BOT_TOKEN is a Slack API token, which can be obtained from https://api.slack.com/.")
-        print("    If SLACK_BOT_TOKEN is omitted, Botty starts in debug mode with a console interface for testing purposes.")
-        print("    Otherwise, Botty connects to the Slack chat associated with SLACK_BOT_TOKEN.")
-        sys.exit(1)
-
-    logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    if len(sys.argv) < 2: # no Slack token specified, use debug mode
-        from bot import SlackDebugBot as SlackBot
-        SLACK_TOKEN = ""
-    else:
-        SLACK_TOKEN = sys.argv[1]
+# process settings
+#logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.basicConfig(filename="botty.log", level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+DEBUG = len(sys.argv) < 2
+if DEBUG:
+    from bot import SlackDebugBot as SlackBot
+    SLACK_TOKEN = ""
+else:
+    SLACK_TOKEN = sys.argv[1]
 
 class Botty(SlackBot):
     def __init__(self, token):
@@ -60,17 +57,17 @@ class Botty(SlackBot):
         assert self.last_message_channel_id is not None, "No message to respond to"
         self.say(self.last_message_channel_id, text)
 
-if __name__ == "__main__":
-    botty = Botty(SLACK_TOKEN)
+botty = Botty(SLACK_TOKEN)
 
-    # register plugins
-    botty.register_plugin(ArithmeticPlugin(botty))
-    botty.register_plugin(PollPlugin(botty))
-    botty.register_plugin(RemindersPlugin(botty))
-    botty.register_plugin(WikiPlugin(botty))
-    botty.register_plugin(HaikuPlugin(botty))
-    botty.register_plugin(PersonalityPlugin(botty))
-    botty.register_plugin(GenerateTextPlugin(botty))
-    botty.register_plugin(BigTextPlugin(botty))
+# register plugins
+botty.register_plugin(ArithmeticPlugin(botty))
+botty.register_plugin(PollPlugin(botty))
+botty.register_plugin(RemindersPlugin(botty))
+botty.register_plugin(WikiPlugin(botty))
+botty.register_plugin(HaikuPlugin(botty))
+botty.register_plugin(PersonalityPlugin(botty))
+botty.register_plugin(GenerateTextPlugin(botty))
+botty.register_plugin(BigTextPlugin(botty))
 
-    botty.start_loop()
+if not DEBUG: botty.administrator_console(globals()) # start administrator console in production mode
+botty.start_loop()

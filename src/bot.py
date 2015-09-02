@@ -23,7 +23,7 @@ class SlackBot:
         self.logger.info("step handler called")
     def on_message(self, message):
         self.logger.info("message handler called with message {}".format(message))
-    
+
     def start_loop(self):
         while True:
             try: self.start() # start the main loop
@@ -33,7 +33,7 @@ class SlackBot:
                 self.logger.info("restarting in 5 seconds...")
                 time.sleep(5)
         self.logger.info("shutting down...")
-    
+
     def start(self):
         # connect to the Slack Realtime Messaging API
         self.logger.info("connecting to Slack realtime messaging API...")
@@ -178,6 +178,22 @@ class SlackBot:
         raw_text = re.sub(r"<(.*?)>", process_special_sequence, sendable_text)
 
         return raw_text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
+    def administrator_console(self, namespace):
+        """Start an interactive administrator Python console with namespace `namespace`."""
+        import threading
+        import readline # this makes arrow keys work for input()
+        import code
+        def start_console():
+            code.interact(
+                "##########################################\n" +
+                "#   Botty Administrator Python Console   #\n" +
+                "##########################################\n",
+                local=namespace
+            )
+        console_thread = threading.Thread(target=start_console)
+        console_thread.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
+        console_thread.start()
 
 class SlackDebugBot(SlackBot):
     def __init__(self, token, logger=None):

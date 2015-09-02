@@ -23,9 +23,9 @@ class GenerateTextPlugin(BasePlugin):
     def on_message(self, message):
         text = self.get_text_message_body(message)
         if text is None: return False
-        match = re.search(r"\bbotty[\s,\.]+(.*)", text, re.IGNORECASE)
+        match = re.search(r"\bbotty(?:[\s,\.]+(.*)|$)", text, re.IGNORECASE)
         if not match: return False
-        query = self.sendable_text_to_text(match.group(1))
+        query = self.sendable_text_to_text(match.group(1) or "")
 
         # use markov chain to complete given phrase
         try: self.respond_raw(self.generate_sentence_starting_with(self.markov, query))
