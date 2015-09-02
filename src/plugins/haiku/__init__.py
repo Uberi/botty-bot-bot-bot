@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# generates haikus - here defined as three semi-related statements with five, seven, and five syllables, respectively
-# get the `mhyph.txt` file from the MOBY English language project
-
 import os, json, re, random
 
 from ..utilities import BasePlugin
@@ -26,6 +23,28 @@ def load_word_syllable_counts():
     return word_syllable_counts
 
 class HaikuPlugin(BasePlugin):
+    """
+    Haiku generator plugin for Botty.
+
+    Here, haikus are defined as three sentences with five, seven, and five syllables, respectively.
+
+    The `mhyph.txt` file is the [MOBY Hyphenation List](http://www.gutenberg.org/ebooks/3204), taken from the MOBY English language project.
+
+    Example invocations:
+
+        #general    | Me: pls haiku me
+        #general    | Botty: ```
+        but for good reason
+        something something teleport
+        that thing with that guy
+        ```
+        #general    | Me: pls haiku me
+        #general    | Botty: ```
+        that's pretty good news
+        but you can control that stuff
+        "accidentally"
+        ```
+    """
     def __init__(self, bot):
         super().__init__(bot)
 
@@ -39,7 +58,7 @@ class HaikuPlugin(BasePlugin):
         for channel_name, history_file in self.get_history_files().items():
             with open(history_file, "r") as f:
                 for entry in f:
-                    text = self.get_text_message_body(json.loads(entry))
+                    text = self.get_message_text(json.loads(entry))
                     if text is None: continue
 
                     # count syllables in the text
@@ -56,7 +75,7 @@ class HaikuPlugin(BasePlugin):
                             self.seven_syllable_messages.append(text)
 
     def on_message(self, message):
-        text = self.get_text_message_body(message)
+        text = self.get_message_text(message)
         if text is None: return False
         if not re.search(r"\bpls\s+haiku\s+me\b", text, re.IGNORECASE): return False
 

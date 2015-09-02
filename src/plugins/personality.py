@@ -6,6 +6,31 @@ from collections import defaultdict
 from .utilities import BasePlugin
 
 class PersonalityPlugin(BasePlugin):
+    """
+    Personality plugin for Botty.
+
+    Adds a help command, responds to being thanked, and repeats things if two people say the same thing one after the other.
+
+    Example invocations:
+
+        #general    | Me: botty help
+        #general    | Botty: botty's got you covered yo
+        say `botty help` to get a light bedtime read
+        say `calc SYMPY_EXPRESSION` to do some math
+        say `what's SOMETHING` if you're too lazy to open a new tab and go to Wikipedia
+        say `botty PHRASE` if you don't mind the echoes
+        say `pls haiku me` if you're feeling poetic
+        say `poll start DESCRIPTION` if y'all gotta decide something
+        say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders
+        say `botty unremind DESCRIPTION` if you don't
+        say `embiggenify TEXT` if your typing is too quiet
+        say `thanks botty`, just because you should
+        #general    | Me: thanks botty
+        #general    | Botty: don't mention it
+        #general    | Other: test
+        #general    | Me: test
+        #general    | Botty: test
+    """
     def __init__(self, bot):
         super().__init__(bot)
         
@@ -13,10 +38,8 @@ class PersonalityPlugin(BasePlugin):
         self.message_repeated_threshold = 2 # minimum number of message repeats in a channel before we repeat it as well
 
     def on_message(self, message):
-        text = self.get_text_message_body(message)
-        if text is None: return False
-        if "channel" not in message or "user" not in message: return False
-        channel, user = message["channel"], message["user"]
+        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
+        if text is None or channel is None or user is None: return False
 
         if re.search(r"\bbotty\s+(?:help|halp|\?+)\b", text, re.IGNORECASE):
             self.respond_raw(
@@ -30,7 +53,7 @@ class PersonalityPlugin(BasePlugin):
                 "say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders\n"
                 "say `botty unremind DESCRIPTION` if you don't\n"
                 "say `embiggenify TEXT` if your typing is too quiet\n"
-                "say `thanks botty`, just because you should\n"
+                "say `thanks botty`, just because you should"
             )
             return True
 

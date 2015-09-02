@@ -5,15 +5,31 @@ import re
 from .utilities import BasePlugin
 
 class PollPlugin(BasePlugin):
+    """
+    Polling plugin for Botty.
+
+    Per-channel polling, with one vote per user.
+
+    Example invocations:
+
+        #general    | Me: poll start stuff?
+        #general    | Botty: *POLL STARTED:* stuff?
+        • Say `poll y` to publicly agree, or `/msg @botty poll y #POLL_CHANNEL` to secretly agree
+        • Say `poll n` to publicly disagree, or `/msg @botty poll n #POLL_CHANNEL` to secretly disagree
+        • Say `poll done` to finish
+        #general    | Me: poll yep
+        #general    | Me: poll done
+        #general    | Botty: *POLL COMPLETED:* stuff?
+        of the 1 people who voted, 1 people agree (100%), and 0 disagree (0%)
+        `|####################################################################################################|`
+    """
     def __init__(self, bot):
         super().__init__(bot)
         self.current_polls = {}
 
     def on_message(self, message):
-        text = self.get_text_message_body(message)
-        if text is None: return False
-        if "channel" not in message or "user" not in message: return False
-        channel, user = message["channel"], message["user"]
+        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
+        if text is None or channel is None or user is None: return False
 
         # poll starting command
         match = re.search(r"^\s*\bpoll\s+(?:start|begin|create)\b(?:\s+(.+))?", text, re.IGNORECASE)

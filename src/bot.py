@@ -62,10 +62,10 @@ class SlackBot:
             # avoid checking the socket too often
             time.sleep(0.1)
 
-    def say(self, channel_id, text):
-        """Say `text` in the channel with ID `channel_id`."""
+    def say(self, channel_id, sendable_text):
+        """Say `sendable_text` in the channel with ID `channel_id`."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
-        assert isinstance(text, str), "`text` must be a string rather than \"{}\"".format(text)
+        assert isinstance(sendable_text, str), "`text` must be a string rather than \"{}\"".format(sendable_text)
 
         # rate limit sending to 1 per second, since that's the Slack API limit
         current_time = time.time()
@@ -75,8 +75,8 @@ class SlackBot:
         else:
             self.last_say_time = current_time
 
-        self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), text))
-        self.client.rtm_send_message(channel_id, text)
+        self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), sendable_text))
+        self.client.rtm_send_message(channel_id, sendable_text)
 
     def get_channel_name_by_id(self, channel_id):
         """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
@@ -203,27 +203,26 @@ class SlackDebugBot(SlackBot):
         if logger is None: self.logger = logging.getLogger(self.__class__.__name__)
         else: self.logger = logger
 
+        self.channel_name = "#general"
+
     def start_loop(self): self.start()
 
     def start(self):
         import threading, queue
         import readline # this makes arrow keys work for input()
 
-        channel_name = "#general"
-
         incoming_message_queue = queue.Queue()
         def accept_input():
             while True:
-                text = input("{} | Me: ".format(channel_name))
+                text = input("{:<12}| Me: ".format(self.channel_name)) # clear the current line using Erase in Line ANSI escape code
                 time.sleep(0.1) # allow time for the enter keystroke to show up in the terminal
                 incoming_message_queue.put({
                     "type": "message",
-                    "channel": channel_name,
+                    "channel": self.channel_name,
                     "user": "Me",
                     "text": self.text_to_sendable_text(text),
                     "ts": str(time.time()),
                 })
-                incoming_message_queue.join()
         input_thread = threading.Thread(target=accept_input)
         input_thread.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
         input_thread.start()
@@ -237,11 +236,12 @@ class SlackDebugBot(SlackBot):
                 time.sleep(0.1)
         except KeyboardInterrupt: pass
 
-    def say(self, channel_id, text):
-        """Say `text` in the channel with ID `channel_id`."""
+    def say(self, channel_id, sendable_text):
+        """Say `sendable_text` in the channel with ID `channel_id`."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
-        assert isinstance(text, str), "`text` must be a string rather than \"{}\"".format(text)
-        print("{} | Botty: {}".format(channel_id, text))
+        assert isinstance(sendable_text, str), "`sendable_text` must be a string rather than \"{}\"".format(sendable_text)
+        print("\r\033[K" + "{:<12}| Botty: {}".format(self.get_channel_name_by_id(channel_id), sendable_text)) # clear the current line using Erase in Line ANSI escape code
+        print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
 
     def get_channel_name_by_id(self, channel_id):
         """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
@@ -265,4 +265,4 @@ class SlackDebugBot(SlackBot):
 
     def get_direct_message_channel_id_by_user_id(self, user_id):
         """Returns the channel ID of the direct message with the user with ID `user_id`, or `None` if the ID is invalid."""
-        return user_id
+        return "DM with {}".format(user_id)

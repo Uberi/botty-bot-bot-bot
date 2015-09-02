@@ -29,11 +29,25 @@ def evaluate_with_time_limit(text, time_limit=1):
     return queue.get()
 
 class ArithmeticPlugin(BasePlugin):
+    """
+    Symbolic mathematics plugin for Botty.
+
+    This uses Sympy for computation and implements evaluation timeouts by spawning a child process and monitoring it.
+
+    Example invocations:
+
+        #general    | Me: ca sqrt(20)
+        #general    | Botty: sqrt(20) :point_right: 2*sqrt(5) :point_right: 4.4721359549995793928183473374625524708812367192230514485417944908210418512756098
+        #general    | Me: calculate integrate(1/x, x)
+        #general    | Botty: integrate(1/x, x) :point_right: log(x)
+        #general    | Me: eval solve(Eq(x**2, 6), x)
+        #general    | Botty: solve(Eq(x**2, 6), x) :point_right: [-sqrt(6), sqrt(6)]
+    """
     def __init__(self, bot):
         super().__init__(bot)
 
     def on_message(self, message):
-        text = self.get_text_message_body(message)
+        text = self.get_message_text(message)
         if text is None: return False
         match = re.search(r"^\s*\b(?:ca(?:lc(?:ulate)?)?|eval(?:uate)?)\s+(.+)", text, re.IGNORECASE)
         if not match: return False

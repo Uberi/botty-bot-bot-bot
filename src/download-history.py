@@ -7,7 +7,7 @@ from slackclient import SlackClient
 if not 2 <= len(sys.argv) <= 3:
     print("Usage: {} SLACK_API_TOKEN [SAVE_FOLDER]".format(sys.argv[0]))
     print("    SLACK_API_TOKEN    Slack API token (obtainable from https://api.slack.com/tokens)".format(sys.argv[0]))
-    print("    SAVE_FOLDER        Folder to save messages in (defaults to @history)".format(sys.argv[0]))
+    print("    SAVE_FOLDER        Folder to save messages in (defaults to ./@history)".format(sys.argv[0]))
     sys.exit(1)
 
 SLACK_TOKEN = sys.argv[1]

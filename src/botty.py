@@ -3,21 +3,15 @@
 import sys, logging
 
 from bot import SlackBot
-from plugins.arithmetic import ArithmeticPlugin
-from plugins.poll import PollPlugin
-from plugins.reminders import RemindersPlugin
-from plugins.wiki import WikiPlugin
-from plugins.generate_text import GenerateTextPlugin
-from plugins.haiku import HaikuPlugin
-from plugins.personality import PersonalityPlugin
-from plugins.big_text import BigTextPlugin
 
-if len(sys.argv) > 2:
-    print("Usage: {} [SLACK_BOT_TOKEN]".format(sys.argv[0]))
-    print("    Start the Botty chatbot for Slack.")
-    print("    SLACK_BOT_TOKEN is a Slack API token, which can be obtained from https://api.slack.com/.")
-    print("    If SLACK_BOT_TOKEN is omitted, Botty starts in debug mode with a console interface for testing purposes.")
-    print("    Otherwise, Botty connects to the Slack chat associated with SLACK_BOT_TOKEN.")
+if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] in {"--help", "-h", "-?"}):
+    print("Usage: {} --help".format(sys.argv[0]))
+    print("    Show this help message")
+    print("Usage: {}".format(sys.argv[0]))
+    print("    Start the Botty chatbot for Slack in testing mode with a console chat interface")
+    print("Usage: {} SLACK_BOT_TOKEN".format(sys.argv[0]))
+    print("    Start the Botty chatbot for the Slack chat associated with SLACK_BOT_TOKEN, and enter the in-process Python REPL")
+    print("    SLACK_BOT_TOKEN is a Slack API token (can be obtained from https://api.slack.com/)")
     sys.exit(1)
 
 # process settings
@@ -59,15 +53,36 @@ class Botty(SlackBot):
 
 botty = Botty(SLACK_TOKEN)
 
-# register plugins
+from plugins.arithmetic import ArithmeticPlugin
 botty.register_plugin(ArithmeticPlugin(botty))
+
+from plugins.poll import PollPlugin
 botty.register_plugin(PollPlugin(botty))
+
+from plugins.reminders import RemindersPlugin
 botty.register_plugin(RemindersPlugin(botty))
+
+from plugins.wiki import WikiPlugin
 botty.register_plugin(WikiPlugin(botty))
+
+from plugins.haiku import HaikuPlugin
 botty.register_plugin(HaikuPlugin(botty))
+
+from plugins.personality import PersonalityPlugin
 botty.register_plugin(PersonalityPlugin(botty))
+
+from plugins.generate_text import GenerateTextPlugin
 botty.register_plugin(GenerateTextPlugin(botty))
+
+from plugins.big_text import BigTextPlugin
 botty.register_plugin(BigTextPlugin(botty))
 
-if not DEBUG: botty.administrator_console(globals()) # start administrator console in production mode
+# start administrator console in production mode
+if not DEBUG:
+    botty.administrator_console(globals())
+    
+    # define useful functions for administration
+    def say(channel, text):
+        botty.say(botty.get_channel_id_by_name(channel), text)
+
 botty.start_loop()

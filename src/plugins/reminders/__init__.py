@@ -14,6 +14,29 @@ from ..utilities import BasePlugin
 SAVED_REMINDERS_FILE = path.join(path.dirname(path.realpath(__file__)), "saved_reminders.json")
 
 class RemindersPlugin(BasePlugin):
+    """
+    Natural language reminders plugin for Botty.
+
+    Supports one-time and recurring reminders. Reminders are persisted to `saved_reminders.json`.
+
+    Any reminders that occur more often than once every 10 seconds will only occur at most once every 10 seconds.
+
+    Example invocations:
+
+        #general    | Me: botty remind me in 10 seconds: pineapple
+        #general    | Botty: Me's reminder for "pineapple" set at 2015-09-01 22:13:58
+        (10-20 seconds later)
+        DM with Me  | Botty: *REMINDER:* pineapple
+        #general    | Me: botty remind #random every 5 seconds: green
+        (5-10 seconds later)
+        #random     | Botty: *REMINDER:* green
+        (10 seconds later)
+        #random     | Botty: *REMINDER:* green
+        (10 seconds later)
+        #random     | Botty: *REMINDER:* green
+        (...)
+        
+    """
     def __init__(self, bot):
         super().__init__(bot)
 
@@ -61,10 +84,8 @@ class RemindersPlugin(BasePlugin):
         return True
 
     def on_message(self, message):
-        text = self.get_text_message_body(message)
-        if text is None: return False
-        if "channel" not in message or "user" not in message: return False
-        channel, user = message["channel"], message["user"]
+        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
+        if text is None or channel is None or user is None: return False
 
         # reminder setting command
         match = re.search(r"^\s*\bbotty[\s,\.]+remind\s+(\S+)\s+(.*?):\s+(.*)", text, re.IGNORECASE)
