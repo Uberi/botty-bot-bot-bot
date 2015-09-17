@@ -240,6 +240,8 @@ class SlackDebugBot(SlackBot):
         """Say `sendable_text` in the channel with ID `channel_id`."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         assert isinstance(sendable_text, str), "`sendable_text` must be a string rather than \"{}\"".format(sendable_text)
+
+        self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), sendable_text))
         print("\r\033[K" + "{:<12}| Botty: {}".format(self.get_channel_name_by_id(channel_id), sendable_text)) # clear the current line using Erase in Line ANSI escape code
         print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
 

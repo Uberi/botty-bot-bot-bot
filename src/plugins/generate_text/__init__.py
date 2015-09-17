@@ -53,7 +53,7 @@ class GenerateTextPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
 
-        assert os.path.exists(SQLITE_DATABASE), "Markov chain must be trained by running the `src/plugins/generate_text/generate_chains_db.py` script."
+        assert path.exists(SQLITE_DATABASE), "Markov chain must be trained by running the `src/plugins/generate_text/generate_chains_db.py` script."
         self.connection = sqlite3.connect(SQLITE_DATABASE)
 
     def on_message(self, message):

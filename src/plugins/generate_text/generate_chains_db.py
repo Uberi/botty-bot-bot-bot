@@ -69,8 +69,9 @@ def get_message_text(message):
 connection = sqlite3.connect(SQLITE_DATABASE)
 connection.execute("DROP TABLE IF EXISTS counts")
 connection.execute("DROP TABLE IF EXISTS chain")
-connection.execute("CREATE TABLE counts (key, count)")
-connection.execute("CREATE TABLE chain (key, next_word, occurrences)")
+connection.execute("CREATE TABLE counts (key TEXT PRIMARY KEY, count INTEGER)")
+connection.execute("CREATE TABLE chain (key TEXT, next_word TEXT, occurrences INTEGER)")
+connection.execute("CREATE INDEX chain_key_index ON chain (key)")
 
 markov = Markov(2) # Markov model with 2 word look-behind
 for channel_name, history_file in get_history_files().items():
