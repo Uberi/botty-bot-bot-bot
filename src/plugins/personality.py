@@ -30,6 +30,8 @@ class PersonalityPlugin(BasePlugin):
         #general    | Other: test
         #general    | Me: test
         #general    | Botty: test
+        #general    | Me: ???
+        #general    | Botty: ????
     """
     def __init__(self, bot):
         super().__init__(bot)
@@ -59,6 +61,15 @@ class PersonalityPlugin(BasePlugin):
 
         if re.search(r"\b(?:thanks|thx|ty)\b.*\bbotty\b", text, re.IGNORECASE):
             self.respond_raw(random.choice(["np", "np br0", "no prob", "don't mention it", "anytime"]))
+            return True
+
+        match = re.search(r"^\s*(\?+)\s*$", text, re.IGNORECASE)
+        if match:
+            self.respond_raw("{}?".format(match.group(1)))
+            return True
+        match = re.search(r"^\s*(!+)\s*$", text, re.IGNORECASE)
+        if match:
+            self.respond_raw("{}!".format(match.group(1)))
             return True
 
         # compute the number of times different people have repeated it
