@@ -6,17 +6,17 @@ Features
 --------
 
 * **Test mode with simulated chat** in the command line: test Botty and Botty plugins offline, without using Slack at all.
-* In-process **Python REPL**: monitor, patch, or control running Botty instances without restarting or editing files.
-* Simple and reliable: Botty gracefully handles plugin exceptions, network issues, and more.
-* Robust, simple plugin API: friendly error messages and well-documented functions makes development fast and productive - each plugin is simply a Python class.
-* Excellent Slack protocol compliance: supports periodic ping, message escape sequences, and more, on top of the official Slack Python library.
+* In-process **Python REPL**: monitor, patch, or control running Botty instances **without restarting** or editing files.
+* Simple and reliable: Botty gracefully handles **plugin exceptions**, **network issues**, and more. Instances have been left continuously running for the past few months without needing any maintenance.
+* Robust **plugin API**: friendly error messages and well-documented functions makes development fast and productive - each plugin is simply a Python class.
+* Excellent **Slack protocol compliance**: supports periodic ping, message escape sequences, and more, on top of the official Slack Python library.
 
 Writing Plugins
 ---------------
 
 ### Overview
 
-Botty plugins are simply Python classes. By convention, we organize these onto one class per file, and put these files under the `src/plugins` directory.
+Botty plugins are simply Python classes. By convention, we organize these onto one class per file, and put these files under the `src/plugins` directory. There's an example in the "Types of Text" section below.
 
 Plugin classes should inherit from `BasePlugin` (from `src/plugins/utilities.py`).
 
@@ -87,23 +87,25 @@ However, **sendable text has special formatting that needs to be explicitly hand
 
 Suppose we have a plugin that attempts to evaluate all messages as Python code and responds with the results:
 
-    from .utilities import BasePlugin
-    class ArithmeticPlugin(BasePlugin):
-        def __init__(self, bot):
-            super().__init__(bot)
+```python
+from .utilities import BasePlugin
+class ArithmeticPlugin(BasePlugin):
+    def __init__(self, bot):
+        super().__init__(bot)
 
-        def on_message(self, message):
-            sendable_text = self.get_message_text(message)
-            if sendable_text is None: return False
-            text = self.sendable_text_to_text(sendable_text) # convert sendable text to plain text
+    def on_message(self, message):
+        sendable_text = self.get_message_text(message)
+        if sendable_text is None: return False
+        text = self.sendable_text_to_text(sendable_text) # convert sendable text to plain text
 
-            try: result = str(eval(text)) # we evaluate the plain text `text` rather than the sendable text `sendable_text`
-            except Exception as e: result = str(e)
-            sendable_result = self.text_to_sendable_text(result)
+        try: result = str(eval(text)) # we evaluate the plain text `text` rather than the sendable text `sendable_text`
+        except Exception as e: result = str(e)
+        sendable_result = self.text_to_sendable_text(result)
 
-            # we send `sendable_text` instead of `text` to preserve sendable formatting that is lost when converting sendable text to plain text
-            self.respond("{} :point_right: {}".format(sendable_text, sendable_result))
-            return True
+        # we send `sendable_text` instead of `text` to preserve sendable formatting that is lost when converting sendable text to plain text
+        self.respond("{} :point_right: {}".format(sendable_text, sendable_result))
+        return True
+```
 
 Deployment
 ----------
