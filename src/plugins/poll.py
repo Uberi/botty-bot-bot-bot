@@ -18,7 +18,7 @@ class PollPlugin(BasePlugin):
         • Say `poll n` to publicly disagree, or `/msg @botty poll n #POLL_CHANNEL` to secretly disagree
         • Say `poll done` to finish
         #general    | Me: poll yep
-        #general    | Me: poll done
+        #general    | Me: poll status
         #general    | Botty: *POLL COMPLETED:* stuff?
         of the 1 people who voted, 1 people agree (100%), and 0 disagree (0%)
         `|####################################################################################################|`
@@ -41,7 +41,7 @@ class PollPlugin(BasePlugin):
                 ("*POLL STARTED*\n" if description is None else "*POLL STARTED:* {}\n".format(description)) +
                 "\u2022 Say `poll y` to publicly agree, or `/msg @botty poll y #POLL_CHANNEL` to secretly agree\n" +
                 "\u2022 Say `poll n` to publicly disagree, or `/msg @botty poll n #POLL_CHANNEL` to secretly disagree\n" +
-                "\u2022 Say `poll done` to finish"
+                "\u2022 Say `poll status` to check results"
             )
             return True
 
@@ -74,7 +74,7 @@ class PollPlugin(BasePlugin):
             return True
 
         # poll completing command
-        match = re.search(r"^\s*\bpoll\s+(?:close|finish|done|status|complete|ready|stop)\b", text, re.IGNORECASE)
+        match = re.search(r"^\s*\bpoll\s+(?:check|status|ready)\b", text, re.IGNORECASE)
         if match:
             if channel not in self.current_polls:
                 self.respond_raw("there's no poll going on right now in {}".format(self.get_channel_name_by_id(channel)))

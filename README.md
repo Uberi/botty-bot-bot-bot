@@ -7,7 +7,7 @@ Features
 
 * **Test mode with simulated chat** in the command line: test Botty and Botty plugins offline, without using Slack at all.
 * In-process **Python REPL**: monitor, patch, or control running Botty instances **without restarting** or editing files.
-* Simple and reliable: Botty gracefully handles **plugin exceptions**, **network issues**, and more. Instances have been left continuously running for the past few months without needing any maintenance.
+* Simple and reliable: Botty gracefully handles **plugin exceptions**, **network issues**, and more.
 * Robust **plugin API**: friendly error messages and well-documented functions makes development fast and productive - each plugin is simply a Python class.
 * Excellent **Slack protocol compliance**: supports periodic ping, message escape sequences, and more, on top of the official Slack Python library.
 
@@ -168,8 +168,8 @@ If previously downloaded history is present, the new history will be transparent
 License
 -------
 
-Copyright 2015 `Anthony Zhang (Uberi) <https://uberi.github.io>`__.
+Copyright 2015 [Anthony Zhang (Uberi)](https://uberi.github.io).
 
-The source code is available online at `GitHub <https://github.com/Uberi/botty-bot-bot-bot>`__.
+The source code is available online at [GitHub](https://github.com/Uberi/botty-bot-bot-bot).
 
 This program is made available under the MIT license. See ``LICENSE.txt`` in the project's root directory for more information.
