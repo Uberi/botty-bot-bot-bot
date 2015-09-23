@@ -9,8 +9,6 @@ import dateutil.rrule
 
 from ..utilities import BasePlugin
 
-# use this with a command like "botty remind #music every monday at 3pm: :fire: :fire: :fire: NEW NOON PACIFIC MIXTAPE IS OUT :fire: :fire: :fire:"
-
 SAVED_REMINDERS_FILE = path.join(path.dirname(path.realpath(__file__)), "saved_reminders.json")
 
 class RemindersPlugin(BasePlugin):

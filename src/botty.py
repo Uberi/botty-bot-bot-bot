@@ -83,6 +83,21 @@ if not DEBUG:
     
     # define useful functions for administration
     def say(channel, text):
+        """Say `text` in `channel` where `text` is a sendable text string and `channel` is a channel name like #general."""
         botty.say(botty.get_channel_id_by_name(channel), text)
+    def reload_plugin(package_name, class_name):
+        """Reload plugin from its plugin class `class_name` from package `package_name`."""
+        # add the new 
+        import importlib
+        plugin_module = importlib.import_module(package_name) # this will not re-initialize the module, since it's been previously imported
+        importlib.reload(plugin_module) # re-initialize the module
+        PluginClass = getattr(plugin_module, class_name)
+
+        # replace the plugin
+        for i, plugin in enumerate(botty.plugins):
+            if isinstance(plugin, PluginClass):
+                del botty.plugins[i]
+                break
+        botty.register_plugin(PluginClass(botty))
 
 botty.start_loop()
