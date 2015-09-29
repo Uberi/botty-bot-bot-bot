@@ -17,7 +17,7 @@ class PersonalityPlugin(BasePlugin):
         #general    | Botty: botty's got you covered yo
         say `botty help` to get a light bedtime read
         say `calc SYMPY_EXPRESSION` to do some math
-        say `what's SOMETHING` if you're too lazy to open a new tab and go to Wikipedia
+        say `botty what's SOMETHING` if you're too lazy to open a new tab and go to Wikipedia
         say `botty PHRASE` if you don't mind the echoes
         say `pls haiku me` if you're feeling poetic
         say `poll start DESCRIPTION` if y'all gotta decide something
@@ -48,7 +48,7 @@ class PersonalityPlugin(BasePlugin):
                 "botty's got you covered yo\n"
                 "say `botty help` to get a light bedtime read\n"
                 "say `calc SYMPY_EXPRESSION` to do some math\n"
-                "say `what's SOMETHING` if you're too lazy to open a new tab and go to Wikipedia\n"
+                "say `botty what's SOMETHING` if you're too lazy to open a new tab and go to Wikipedia\n"
                 "say `botty PHRASE` if you don't mind the echoes\n"
                 "say `pls haiku me` if you're feeling poetic\n"
                 "say `poll start DESCRIPTION` if y'all gotta decide something\n"
