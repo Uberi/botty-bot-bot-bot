@@ -8,14 +8,14 @@ from datetime import datetime
 import recurrent
 
 # process command line arguments
-parser = argparse.ArgumentParser(description="Slice and filter Slack chat history")
-parser.add_argument("--history", help="Directory to look for JSON chat history files in (e.g., \"~/.slack-history\")")
-parser.add_argument("-f", "--filter-from", help="Show only messages at or after a date/time (e.g., \"4pm september 8 2015\")")
-parser.add_argument("-t", "--filter-to", help="Show only messages before or at a date/time (e.g., \"8pm september 9 2015\")")
-parser.add_argument("-c", "--filter-channel", action="append", help="Show only messages within a channel (e.g., \"general\", \"#general\")")
-parser.add_argument("-u", "--filter-user", action="append", help="Show only messages by a specific user (e.g., \"@anthony\", \"anthony\", \"Anthony Zhang\")")
-parser.add_argument("-i", "--filter-contains", action="append", help="Show only messages that contain a specified string (e.g., \"wing night\", \"nuggets\")")
-parser.add_argument("-s", "--sort", choices=["time", "channel", "user", "text"], default="time", help="Show only messages that contain a specified string (e.g., \"wing night\", \"nuggets\")")
+parser = argparse.ArgumentParser(description="Slice and filter Slack chat history.")
+parser.add_argument("--history", help="Directory to look for JSON chat history files in (e.g., \"~/.slack-history\").")
+parser.add_argument("-f", "--filter-from", help="Show only messages at or after a date/time (e.g., \"4pm september 8 2015\").")
+parser.add_argument("-t", "--filter-to", help="Show only messages before or at a date/time (e.g., \"8pm september 9 2015\").")
+parser.add_argument("-c", "--filter-channel", action="append", help="Show only messages within a channel (e.g., \"general\", \"#general\"). If multiple --filter-channel arguments are specified, messages in any of the given channels pass the filter.")
+parser.add_argument("-u", "--filter-user", action="append", help="Show only messages by a specific user (e.g., \"@anthony\", \"anthony\", \"Anthony Zhang\"). If multiple --filter-user arguments are specified, messages by any of the given users pass the filter.")
+parser.add_argument("-i", "--filter-contains", action="append", help="Show only messages that contain a specified string (e.g., \"wing night\", \"nuggets\"). If multiple --filter-contains arguments are specified, messages containing any of the given strings pass the filter.")
+parser.add_argument("-s", "--sort", choices=["time", "channel", "user", "text"], default="time", help="Show only messages that contain a specified string (e.g., \"wing night\", \"nuggets\").")
 args = parser.parse_args()
 
 # process --history argument

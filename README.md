@@ -165,6 +165,48 @@ If previously downloaded history is present, the new history will be transparent
 
 `example-download-history.sh` is a Bash script that shows a sample usage of this utility. If you edit the script to replace `SLACK_API_TOKEN_GOES_HERE` with an actual Slack API token, you can download history simply by running it.
 
+### `src/process-history.py`
+
+`src/process-history.py` is a standalone utility that processes and shows history in-memory. With a variety of filtering options, it is very useful for searching through and filtering messages.
+
+    $ python3 src/process-history.py --help
+    usage: process-history.py [-h] [--history HISTORY] [-f FILTER_FROM]
+                              [-t FILTER_TO] [-c FILTER_CHANNEL] [-u FILTER_USER]
+                              [-i FILTER_CONTAINS] [-s {time,channel,user,text}]
+    
+    Slice and filter Slack chat history.
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --history HISTORY     Directory to look for JSON chat history files in
+                            (e.g., "~/.slack-history").
+      -f FILTER_FROM, --filter-from FILTER_FROM
+                            Show only messages at or after a date/time (e.g., "4pm
+                            september 8 2015").
+      -t FILTER_TO, --filter-to FILTER_TO
+                            Show only messages before or at a date/time (e.g.,
+                            "8pm september 9 2015").
+      -c FILTER_CHANNEL, --filter-channel FILTER_CHANNEL
+                            Show only messages within a channel (e.g., "general",
+                            "#general"). If multiple --filter-channel arguments
+                            are specified, messages in any of the given channels
+                            pass the filter.
+      -u FILTER_USER, --filter-user FILTER_USER
+                            Show only messages by a specific user (e.g.,
+                            "@anthony", "anthony", "Anthony Zhang"). If multiple
+                            --filter-user arguments are specified, messages by any
+                            of the given users pass the filter.
+      -i FILTER_CONTAINS, --filter-contains FILTER_CONTAINS
+                            Show only messages that contain a specified string
+                            (e.g., "wing night", "nuggets"). If multiple --filter-
+                            contains arguments are specified, messages containing
+                            any of the given strings pass the filter.
+      -s {time,channel,user,text}, --sort {time,channel,user,text}
+                            Show only messages that contain a specified string
+                            (e.g., "wing night", "nuggets").
+
+`example-process-history.sh` is a Bash script that shows a sample usage of this utility, filtering out messages in the channel `#general` that include the phrase "wing night" or "nuggets", sorted alphabetically by username.
+
 License
 -------
 
