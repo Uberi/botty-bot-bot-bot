@@ -14,14 +14,23 @@ class PollPlugin(BasePlugin):
 
         #general    | Me: poll start stuff?
         #general    | Botty: *POLL STARTED:* stuff?
-        • Say `poll y` to publicly agree, or `/msg @botty poll y #POLL_CHANNEL` to secretly agree
-        • Say `poll n` to publicly disagree, or `/msg @botty poll n #POLL_CHANNEL` to secretly disagree
-        • Say `poll done` to finish
+        • Say `poll y` to publicly agree
+        • Say `poll n` to publicly disagree
+        • Say `poll status` to check results
         #general    | Me: poll yep
         #general    | Me: poll status
-        #general    | Botty: *POLL COMPLETED:* stuff?
+        #general    | Botty: *POLL STATUS:* stuff?
         of the 1 people who voted, 1 people agree (100%), and 0 disagree (0%)
         `|####################################################################################################|`
+        > *Me* votes yes
+        #general    | Me: poll secret test
+        #general    | Botty: *ANONYMOUS POLL STARTED:* test
+        • Say `/msg @botty poll y #POLL_CHANNEL` to secretly agree
+        • Say `/msg @botty poll n #POLL_CHANNEL` to secretly disagree
+        • Say `poll status` to check results
+        #general    | Me: poll check
+        #general    | Botty: *POLL STATUS:* test
+        Nobody voted :(
     """
     def __init__(self, bot):
         super().__init__(bot)
@@ -86,21 +95,21 @@ class PollPlugin(BasePlugin):
 
             description, voters, is_private = self.current_polls[channel]
             if not voters:
-                self.respond(("*POLL COMPLETED*\n" if description is None else "*POLL COMPLETED:* {}\n".format(description)) + "Nobody voted :(")
+                self.respond(("*POLL STATUS*\n" if description is None else "*POLL STATUS:* {}\n".format(description)) + "Nobody voted :(")
                 return True
             agree = sum(voters.values())
             disagree = len(voters) - agree
             agree_percent, disagree_percent = round(100 * agree / len(voters)), round(100 * disagree / len(voters))
             if is_private:
                 self.respond(
-                    ("*ANONYMOUS POLL COMPLETED*\n" if description is None else "*ANONYMOUS POLL COMPLETED:* {}\n".format(description)) +
+                    ("*ANONYMOUS POLL STATUS*\n" if description is None else "*ANONYMOUS POLL STATUS:* {}\n".format(description)) +
                     "of the {} people who voted, {} people agree ({}%), and {} disagree ({}%)\n".format(
                         len(voters), agree, agree_percent, disagree, disagree_percent
                     ) + "`|" + agree_percent * "#" + (100 - agree_percent) * "-"  + "|`"
                 )
             else:
                 self.respond(
-                    ("*POLL COMPLETED*\n" if description is None else "*POLL COMPLETED:* {}\n".format(description)) +
+                    ("*POLL STATUS*\n" if description is None else "*POLL STATUS:* {}\n".format(description)) +
                     "of the {} people who voted, {} people agree ({}%), and {} disagree ({}%)\n".format(
                         len(voters), agree, agree_percent, disagree, disagree_percent
                     ) + "`|" + agree_percent * "#" + (100 - agree_percent) * "-"  + "|`\n" +
