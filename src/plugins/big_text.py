@@ -68,5 +68,8 @@ class BigTextPlugin(BasePlugin):
         ]
         random_font = random.choice(good_fonts)
         f = Figlet(font=random_font)
-        self.respond_raw("```{}```".format(f.renderText(query).rstrip()))
+        result = f.renderText(query).rstrip()
+        if result == "": return False
+
+        self.respond_raw("```{}```".format(result))
         return True

@@ -21,6 +21,7 @@ class PersonalityPlugin(BasePlugin):
         say `botty PHRASE` if you don't mind the echoes
         say `pls haiku me` if you're feeling poetic
         say `poll start DESCRIPTION` if y'all gotta decide something
+        say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously
         say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders
         say `botty unremind DESCRIPTION` if you don't
         say `embiggenify TEXT` if your typing is too quiet
@@ -52,6 +53,7 @@ class PersonalityPlugin(BasePlugin):
                 "say `botty PHRASE` if you don't mind the echoes\n"
                 "say `pls haiku me` if you're feeling poetic\n"
                 "say `poll start DESCRIPTION` if y'all gotta decide something\n"
+                "say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously\n"
                 "say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders\n"
                 "say `botty unremind DESCRIPTION` if you don't\n"
                 "say `embiggenify TEXT` if your typing is too quiet\n"
@@ -82,4 +84,5 @@ class PersonalityPlugin(BasePlugin):
         if self.last_entries[channel][2] >= self.message_repeated_threshold:
             self.respond(text) # repeat the message
             del self.last_entries[channel]
+            return True
         return False
