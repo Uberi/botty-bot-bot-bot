@@ -152,9 +152,9 @@ Botty ships with several default plugins. For more information about what they d
 
 For general information about writing plugins, see the "Writing Plugins" section.
 
-### `src/download-history.py`
+### `utils/download-history.py`
 
-`src/download-history.py` is a standalone utility that downloads history from all channels in the Slack team associated with a given API token.
+`utils/download-history.py` is a standalone utility that downloads history from all channels in the Slack team associated with a given API token.
 
 If previously downloaded history is present, the new history will be transparently appended to the old history.
 
@@ -165,9 +165,9 @@ If previously downloaded history is present, the new history will be transparent
 
 `example-download-history.sh` is a Bash script that shows a sample usage of this utility. If you edit the script to replace `SLACK_API_TOKEN_GOES_HERE` with an actual Slack API token, you can download history simply by running it.
 
-### `src/process-history.py`
+### `utils/process-history.py`
 
-`src/process-history.py` is a standalone utility that processes and shows history in-memory. With a variety of filtering options, it is very useful for searching through and filtering messages.
+`utils/process-history.py` is a standalone utility that processes and shows history in-memory. With a variety of filtering options, it is very useful for searching through and filtering messages.
 
     $ python3 src/process-history.py --help
     usage: process-history.py [-h] [--history HISTORY] [-f FILTER_FROM]
@@ -206,6 +206,10 @@ If previously downloaded history is present, the new history will be transparent
                             (e.g., "wing night", "nuggets").
 
 `example-process-history.sh` is a Bash script that shows a sample usage of this utility, filtering out messages in the channel `#general` that include the phrase "wing night" or "nuggets", sorted alphabetically by username.
+
+### `utils/export-history-to-db.py`
+
+`utils/export-history-to-db.py` is a standalone utility that, when run, exports an entire history directory (downloaded using something like `utils/download-history.py`) to a single Sqlite3 database, defaulting to `history.db` in the same directory as the script.
 
 License
 -------
