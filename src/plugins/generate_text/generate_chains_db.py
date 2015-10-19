@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-import os
-import re, random, json
-from collections import defaultdict
+import os, re, json
 import sqlite3
 
 from markov import Markov

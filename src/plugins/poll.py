@@ -113,7 +113,7 @@ class PollPlugin(BasePlugin):
                     "of the {} people who voted, {} people agree ({}%), and {} disagree ({}%)\n".format(
                         len(voters), agree, agree_percent, disagree, disagree_percent
                     ) + "`|" + agree_percent * "#" + (100 - agree_percent) * "-"  + "|`\n" +
-                    "\n".join("> *{}* votes {}".format(user_name, "yes" if vote else "no") for user_name, vote in voters.items())
+                    "\n".join("> *{}* votes {}".format(self.untag_word(user_name), "yes" if vote else "no") for user_name, vote in voters.items())
                 )
             return True
 
