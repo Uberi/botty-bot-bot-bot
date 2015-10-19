@@ -45,6 +45,45 @@ class BasePlugin:
             return result
         return {}
 
+    def untag_word(self, word):
+        """Returns `word` where characters are modified to appear the same but not tag users."""
+        homoglyph_replacements = [
+            # basically identical replacements
+            (",", "\u201A"), ("-", "\u2010"), (";", "\u037E"),
+            ("A", "\u0391"), ("B", "\u0392"), ("C", "\u0421"), ("D", "\u216E"), ("E", "\u0395"),
+            ("H", "\u0397"), ("I", "\u0399"), ("J", "\u0408"),
+            ("K", "\u039A"), ("L", "\u216C"), ("M", "\u039C"), ("N", "\u039D"), ("O", "\u039F"),
+            ("P", "\u03A1"), ("S", "\u0405"), ("T", "\u03A4"), ("V", "\u2164"), ("X", "\u03A7"),
+            ("Y", "\u03A5"), ("Z", "\u0396"), ("a", "\u0430"), ("c", "\u03F2"), ("d", "\u217E"),
+            ("e", "\u0435"), ("i", "\u0456"), ("j", "\u0458"), ("l", "\u217C"),
+            ("m", "\u217F"), ("o", "\u03BF"), ("p", "\u0440"), ("s", "\u0455"), ("v", "\u03BD"),
+            ("x", "\u0445"), ("y", "\u0443"), ("\u00DF", "\u03B2"),
+            ("\u00E4", "\u04D3"), ("\u00F6", "\u04E7"),
+            
+            # similar replacements
+            ("/", "\u2044"), ("F", "\u03DC"), ("G", "\u050C"), 
+            ("\u00C4", "\u04D2"), ("\u00D6", "\u04E6"), 
+            
+            # fixed width replacements
+            ("*", "\uFF0A"), ("!", "\uFF01"), ("\"", "\uFF02"), ("#", "\uFF03"), ("$", "\uFF04"), ("%", "\uFF05"),
+            ("&", "\uFF06"), ("'", "\uFF07"), ("(", "\uFF08"), (")", "\uFF09"), ("+", "\uFF0B"),
+            (".", "\uFF0E"), ("0", "\uFF10"), ("1", "\uFF11"), ("2", "\uFF12"), ("3", "\uFF13"),
+            ("4", "\uFF14"), ("5", "\uFF15"), ("6", "\uFF16"), ("7", "\uFF17"), ("8", "\uFF18"),
+            ("9", "\uFF19"), (":", "\uFF1A"), ("<", "\uFF1C"), ("=", "\uFF1D"), (">", "\uFF1E"),
+            ("?", "\uFF1F"), ("@", "\uFF20"), ("Q", "\uFF31"), ("R", "\uFF32"), ("U", "\uFF35"),
+            ("W", "\uFF37"), ("[", "\uFF3B"), ("\\", "\uFF3C"), ("]", "\uFF3D"), ("^", "\uFF3E"),
+            ("_", "\uFF3F"), ("`", "\uFF40"), ("b", "\uFF42"), ("f", "\uFF46"), ("g", "\uFF47"), ("h", "\uFF48"),
+            ("k", "\uFF4B"), ("n", "\uFF4E"), ("q", "\uFF51"), ("r", "\uFF52"), ("t", "\uFF54"),
+            ("u", "\uFF55"), ("w", "\uFF57"), ("z", "\uFF5A"), ("{", "\uFF5B"), ("|", "\uFF5C"),
+            ("}", "\uFF5D"), ("~", "\uFF5E"),
+        ]
+        
+        for character, homoglyph in homoglyph_replacements:
+            new_word = word.replace(character, homoglyph, 1)
+            if new_word != word:
+                return new_word
+        return word
+
     def on_step(self): return False
     def on_message(self, message): return False
 
