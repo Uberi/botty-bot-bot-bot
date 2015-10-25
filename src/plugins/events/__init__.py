@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+
+import re, json
+from os import path
+from datetime import datetime
+from urllib.parse import urlencode
+from urllib.request import urlopen, Request
+from functools import lru_cache
+
+import httplib2
+import oauth2client
+import apiclient
+import dateutil.parser
+from dateutil.tz import tzlocal
+
+from ..utilities import BasePlugin
+
+CALENDAR_ID = "uc21b9q2nr2ggquc3c6ahdgeo4@group.calendar.google.com" # calendar ID for W A T E R L O O B O Y S
+SAVED_OAUTH_CREDENTIALS_FILE = path.join(path.dirname(path.realpath(__file__)), "oauth_credentials.json") # OAuth credentials, created by `src/plugins/events/get_oauth_credentials.py`
+
+class EventsPlugin(BasePlugin):
+    """
+    Event calendar listing plugin for Botty.
+
+    Example invocations:
+
+        ;wip
+    """
+    def __init__(self, bot):
+        super().__init__(bot)
+
+    @lru_cache() # cache recently used results to speed up repeated calls with the same parameters
+    def shorten_url_google(self, url):
+        request_url = "http://tinyurl.com/api-create.php?" + urlencode({"url": url})
+        response = urlopen(request_url)
+        short_url = response.read().decode("utf-8")
+        return short_url
+
+    def on_message(self, message):
+        text = self.get_message_text(message)
+        if text is None: return False
+        match = re.search(r"\b(?:sup\s+botty|wassup\s+botty|wh?at'?s\s+up\s+botty|botty\s+wassup|botty\s+what's\s+up|what\s+are\s+the\s+haps)\b", text, re.IGNORECASE)
+        if not match: return False
+
+        # obtain Google Calendar service
+        store = oauth2client.file.Storage(SAVED_OAUTH_CREDENTIALS_FILE)
+        credentials = store.get()
+        assert credentials and not credentials.invalid, "No valid Google Calendar OAuth credentials available - run `python3 get_oauth_credentials.py` to create OAuth credentials."
+        authorized_http = credentials.authorize(httplib2.Http())
+        calendar_service = apiclient.discovery.build("calendar", "v3", http=authorized_http)
+
+        start_timestamp = datetime.utcnow().isoformat() + "Z" # reference date for events - all events ending before this are excluded from the results
+        eventsResult = calendar_service.events().list(
+            calendarId = CALENDAR_ID,
+            timeMin = start_timestamp,
+            maxResults = 5,
+            singleEvents = True,
+            orderBy = "startTime"
+        ).execute()
+        events = eventsResult.get("items", [])
+
+        now = datetime.now()
+        result = []
+        for event in events:
+            if "dateTime" in event["start"]:
+                start = dateutil.parser.parse(event["start"]["dateTime"]).astimezone(tzlocal()).replace(tzinfo=None) # start time in local time
+            else:
+                start = dateutil.parser.parse(event["start"]["date"])
+            if "dateTime" in event["end"]:
+                end = dateutil.parser.parse(event["end"]["dateTime"]).astimezone(tzlocal()).replace(tzinfo=None) # end time in local time
+            else:
+                end = dateutil.parser.parse(event["end"]["date"])
+            summary = self.text_to_sendable_text(event["summary"])
+            url = self.shorten_url_google(event["htmlLink"])
+            if start.date() == end.date():
+                result.append("\u2022 {}*{}* from {} to {} on {} ({})".format("[HAPPENING NOW] " if start <= now < end else "", summary, start.strftime("%H:%M"), end.strftime("%H:%M"), start.strftime("%Y-%m-%d (%A)"), url))
+            else:
+                result.append("\u2022 {}*{}* from {} to {} ({})".format("[HAPPENING NOW] " if start <= now < end else "", summary, start.strftime("%H:%M %Y-%m-%d (%A)"), end.strftime("%H:%M %Y-%m-%d (%A)"), url))
+        self.respond("UPCOMING EVENTS:\n{}".format("\n".join(result)))
+
+        return True

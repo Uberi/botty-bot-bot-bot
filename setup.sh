@@ -12,3 +12,8 @@ sudo pip3 install recurrent
 sudo pip3 install wikipedia
 sudo pip3 install sympy
 sudo pip3 install pyfiglet
+sudo pip3 install google-api-python-client
+
+# modules used by web interface
+sudo pip3 install flask
+sudo pip3 install flask-sqlalchemy
