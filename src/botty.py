@@ -71,6 +71,9 @@ botty.register_plugin(HaikuPlugin(botty))
 from plugins.personality import PersonalityPlugin
 botty.register_plugin(PersonalityPlugin(botty))
 
+from plugins.events import EventsPlugin
+botty.register_plugin(EventsPlugin(botty))
+
 from plugins.generate_text import GenerateTextPlugin
 botty.register_plugin(GenerateTextPlugin(botty))
 
