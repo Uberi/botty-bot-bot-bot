@@ -22,6 +22,7 @@ class PersonalityPlugin(BasePlugin):
         say `pls haiku me` if you're feeling poetic
         say `poll start DESCRIPTION` if y'all gotta decide something
         say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously
+        say `sup botty` if you're wondering where the haps are
         say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders
         say `botty unremind DESCRIPTION` if you don't
         say `embiggenify TEXT` if your typing is too quiet
@@ -54,6 +55,7 @@ class PersonalityPlugin(BasePlugin):
                 "say `pls haiku me` if you're feeling poetic\n"
                 "say `poll start DESCRIPTION` if y'all gotta decide something\n"
                 "say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously\n"
+                "say `sup botty` if you're wondering where the haps are\n"
                 "say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders\n"
                 "say `botty unremind DESCRIPTION` if you don't\n"
                 "say `embiggenify TEXT` if your typing is too quiet\n"
