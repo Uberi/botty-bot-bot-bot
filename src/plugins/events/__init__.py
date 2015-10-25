@@ -24,7 +24,13 @@ class EventsPlugin(BasePlugin):
 
     Example invocations:
 
-        ;wip
+        #general    | Me: sup botty
+        #general    | Botty: UPCOMING EVENTS:
+        • *Tech Talk: Defrobnicating The Gluon Manifold At Scale* from 16:00 to 16:30 on 2015-10-25 (Sunday) (http://tinyurl.com/usnrisy)
+        • *Info Session: Oxygen - The New Killer App?* from 22:00 to 23:30 on 2015-10-26 (Monday) (http://tinyurl.com/xmentkx)
+        • *Bloodmoon: The Bloodmoon Rises* from 17:30 2015-10-27 (Tuesday) to 02:30 2015-10-28 (Wednesday) (http://tinyurl.com/gydyusw)
+        • *Wednesday Evening Grassroots Blues* from 19:00 to 23:00 on 2015-10-28 (Wednesday) (http://tinyurl.com/trcbvfa)
+        • *Movie Night: Gun Woman Reloaded* from 19:00 2015-10-28 (Wednesday) to 00:30 2015-10-29 (Thursday) (http://tinyurl.com/sdfklea)
     """
     def __init__(self, bot):
         super().__init__(bot)
