@@ -3,8 +3,6 @@
 import re, json
 from os import path
 from datetime import datetime
-from urllib.parse import urlencode
-from urllib.request import urlopen, Request
 from functools import lru_cache
 
 import httplib2
@@ -12,6 +10,7 @@ import oauth2client
 import apiclient
 import dateutil.parser
 from dateutil.tz import tzlocal
+import requests
 
 from ..utilities import BasePlugin
 
@@ -36,11 +35,10 @@ class EventsPlugin(BasePlugin):
         super().__init__(bot)
 
     @lru_cache() # cache recently used results to speed up repeated calls with the same parameters
-    def shorten_url_google(self, url):
-        request_url = "http://tinyurl.com/api-create.php?" + urlencode({"url": url})
-        response = urlopen(request_url)
-        short_url = response.read().decode("utf-8")
-        return short_url
+    def shorten_url(self, url):
+        request = requests.get("http://tinyurl.com/api-create.php", params={"url": url})
+        request.raise_for_status()
+        return request.text
 
     def on_message(self, message):
         text = self.get_message_text(message)
@@ -77,7 +75,7 @@ class EventsPlugin(BasePlugin):
             else:
                 end = dateutil.parser.parse(event["end"]["date"])
             summary = self.text_to_sendable_text(event["summary"])
-            url = self.shorten_url_google(event["htmlLink"])
+            url = self.shorten_url(event["htmlLink"])
             if start.date() == end.date():
                 result.append("\u2022 {}*{}* from {} to {} on {} ({})".format("[HAPPENING NOW] " if start <= now < end else "", summary, start.strftime("%H:%M"), end.strftime("%H:%M"), start.strftime("%Y-%m-%d (%A)"), url))
             else:

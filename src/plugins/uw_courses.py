@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import re, json
-from urllib.request import urlopen
-from urllib.parse import urlencode
 from functools import lru_cache
 
 import requests
