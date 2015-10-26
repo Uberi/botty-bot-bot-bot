@@ -26,6 +26,7 @@ class PersonalityPlugin(BasePlugin):
         say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders
         say `botty unremind DESCRIPTION` if you don't
         say `embiggenify TEXT` if your typing is too quiet
+        say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding
         say `thanks botty`, just because you should
         #general    | Me: thanks botty
         #general    | Botty: don't mention it
@@ -59,6 +60,7 @@ class PersonalityPlugin(BasePlugin):
                 "say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders\n"
                 "say `botty unremind DESCRIPTION` if you don't\n"
                 "say `embiggenify TEXT` if your typing is too quiet\n"
+                "say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding\n"
                 "say `thanks botty`, just because you should"
             )
             return True

@@ -80,6 +80,9 @@ botty.register_plugin(GenerateTextPlugin(botty))
 from plugins.big_text import BigTextPlugin
 botty.register_plugin(BigTextPlugin(botty))
 
+from plugins.uw_courses import UWCoursesPlugin
+botty.register_plugin(UWCoursesPlugin(botty))
+
 # start administrator console in production mode
 if not DEBUG:
     botty.administrator_console(globals())
