@@ -53,6 +53,19 @@ class Botty(SlackBot):
 
 botty = Botty(SLACK_TOKEN)
 
+# add a recent message logging plugin
+from collections import deque
+from .plugins.utilities import BasePlugin
+recent_events = deque(maxlen=100)
+class EventHistoryPlugin(BasePlugin):
+    def __init__(self, bot):
+        super().__init__(bot)
+    def on_message(self, message):
+        if message.get("type") in ("ping", "pong"): return False # ignore ping and pong messages
+        recent_events.append(message)
+        return False
+botty.register_plugin(EventHistoryPlugin(botty))
+
 from plugins.arithmetic import ArithmeticPlugin
 botty.register_plugin(ArithmeticPlugin(botty))
 
@@ -85,8 +98,6 @@ botty.register_plugin(UWCoursesPlugin(botty))
 
 # start administrator console in production mode
 if not DEBUG:
-    botty.administrator_console(globals())
-    
     # define useful functions for administration
     def say(channel, text):
         """Say `text` in `channel` where `text` is a sendable text string and `channel` is a channel name like #general."""
@@ -105,18 +116,7 @@ if not DEBUG:
                 del botty.plugins[i]
                 break
         botty.register_plugin(PluginClass(botty))
-    
-    # add a recent message logging plugin
-    from collections import deque
-    from .plugins.utilities import BasePlugin
-    recent_events = deque(maxlen=100)
-    class EventHistoryPlugin(BasePlugin):
-        def __init__(self, bot):
-            super().__init__(bot)
-        def on_message(self, message):
-            if message.get("type") in ("ping", "pong"): return False # ignore ping and pong messages
-            recent_events.append(message)
-            return False
-    botty.register_plugin(EventHistoryPlugin(botty))
+
+    botty.administrator_console(globals())
 
 botty.start_loop()
