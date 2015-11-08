@@ -18,11 +18,12 @@ class BasePlugin:
 
     def get_message_text(self, message):
         """Returns the text value of `message` if it is a valid text message, or `None` otherwise"""
-        if message.get("type") != "message": return None
-        if not isinstance(message.get("user"), str): return None
-        if not isinstance(message.get("text"), str): return None
-        if not isinstance(message.get("ts"), str): return None
-        return self.bot.server_text_to_sendable_text(message["text"])
+        if message.get("type") == "message" and isinstance(message.get("ts"), str) and isinstance(message.get("user"), str):
+            if isinstance(message.get("text"), str): # normal message
+                return self.bot.server_text_to_sendable_text(message["text"])
+            if message.get("subtype") == "message_changed" and isinstance(message.get("message", {}).get("text"), str): # edited message
+                return self.bot.server_text_to_sendable_text(message["message"]["text"])
+        return None
 
     def get_message_channel(self, message):
         """Returns the ID of the channel containing `message` if there is one, or `None` otherwise"""

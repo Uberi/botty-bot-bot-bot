@@ -56,7 +56,7 @@ botty = Botty(SLACK_TOKEN)
 # add a recent message logging plugin
 from collections import deque
 from plugins.utilities import BasePlugin
-recent_events = deque(maxlen=100)
+recent_events = deque(maxlen=500)
 class EventHistoryPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
