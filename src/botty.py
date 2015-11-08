@@ -93,17 +93,30 @@ if not DEBUG:
         botty.say(botty.get_channel_id_by_name(channel), text)
     def reload_plugin(package_name, class_name):
         """Reload plugin from its plugin class `class_name` from package `package_name`."""
-        # add the new 
+        # obtain the new plugin
         import importlib
         plugin_module = importlib.import_module(package_name) # this will not re-initialize the module, since it's been previously imported
         importlib.reload(plugin_module) # re-initialize the module
         PluginClass = getattr(plugin_module, class_name)
 
-        # replace the plugin
+        # replace the old plugin with the new one
         for i, plugin in enumerate(botty.plugins):
             if isinstance(plugin, PluginClass):
                 del botty.plugins[i]
                 break
         botty.register_plugin(PluginClass(botty))
+    
+    # add a recent message logging plugin
+    from collections import deque
+    from .plugins.utilities import BasePlugin
+    recent_events = deque(maxlen=100)
+    class EventHistoryPlugin(BasePlugin):
+        def __init__(self, bot):
+            super().__init__(bot)
+        def on_message(self, message):
+            if message.get("type") in ("ping", "pong"): return False # ignore ping and pong messages
+            recent_events.append(message)
+            return False
+    botty.register_plugin(EventHistoryPlugin(botty))
 
 botty.start_loop()
