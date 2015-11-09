@@ -39,12 +39,33 @@ class Botty(SlackBot):
 
     def on_message(self, message):
         self.logger.debug("received message message {}".format(message))
-        if isinstance(message.get("channel"), str): # store the channel ID so responding can work
-            self.last_message_channel_id = message["channel"]
+        channel = self.get_message_channel(message)
+        if channel: self.last_message_channel_id = channel
         for plugin in self.plugins:
             if plugin.on_message(message):
                 self.logger.info("message handled by {}: {}".format(plugin.__class__.__name__, message))
                 break
+
+    def get_message_text(self, message):
+        """Returns the text value of `message` if it is a valid text message, or `None` otherwise"""
+        if message.get("type") == "message" and isinstance(message.get("ts"), str) and isinstance(message.get("channel"), str):
+            if isinstance(message.get("text"), str) and isinstance(message.get("user"), str): # normal message
+                return self.bot.server_text_to_sendable_text(message["text"])
+            if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str) and isinstance(message["message"].get("text"), str): # edited message
+                return self.bot.server_text_to_sendable_text(message["message"]["text"])
+        return None
+
+    def get_message_channel(self, message):
+        """Returns the ID of the channel containing `message` if there is one, or `None` otherwise"""
+        if isinstance(message.get("channel"), str): return message["channel"]
+        return None
+
+    def get_message_sender(self, message):
+        """Returns the ID of the user who sent `message` if there is one, or `None` otherwise"""
+        if isinstance(message.get("user"), str): return message["user"]
+        if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str): # edited message
+            return message["message"]["user"]
+        return None
 
     def respond(self, text):
         """Say `text` in the channel that most recently received a message."""

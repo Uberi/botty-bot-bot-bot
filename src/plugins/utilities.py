@@ -16,27 +16,6 @@ class BasePlugin:
         self.bot = bot
         self.logger = bot.logger.getChild(self.__class__.__name__)
 
-    def get_message_text(self, message):
-        """Returns the text value of `message` if it is a valid text message, or `None` otherwise"""
-        if message.get("type") == "message" and isinstance(message.get("ts"), str) and isinstance(message.get("channel"), str):
-            if isinstance(message.get("text"), str) and isinstance(message.get("user"), str): # normal message
-                return self.bot.server_text_to_sendable_text(message["text"])
-            if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str) and isinstance(message["message"].get("text"), str): # edited message
-                return self.bot.server_text_to_sendable_text(message["message"]["text"])
-        return None
-
-    def get_message_channel(self, message):
-        """Returns the ID of the channel containing `message` if there is one, or `None` otherwise"""
-        if isinstance(message.get("channel"), str): return message["channel"]
-        return None
-
-    def get_message_sender(self, message):
-        """Returns the ID of the user who sent `message` if there is one, or `None` otherwise"""
-        if isinstance(message.get("user"), str): return message["user"]
-        if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str): # edited message
-            return message["message"]["user"]
-        return None
-
     def get_history_files(self):
         """Returns a mapping from channel names to absolute file paths of their history entries"""
         for dirpath, _, filenames in os.walk(CHAT_HISTORY_DIRECTORY):
@@ -87,6 +66,9 @@ class BasePlugin:
     def on_step(self): return False
     def on_message(self, message): return False
 
+    def get_message_text(self, message): return self.bot.get_message_text(message)
+    def get_message_channel(self, message): return self.bot.get_message_channel(message)
+    def get_message_sender(self, message): return self.bot.get_message_sender(message)
     def say(self, channel_id, sendable_text): self.bot.say(channel_id, sendable_text)
     def say_raw(self, channel_id, text): self.bot.say(channel_id, self.text_to_sendable_text(text))
     def respond(self, text): self.bot.respond(text)
