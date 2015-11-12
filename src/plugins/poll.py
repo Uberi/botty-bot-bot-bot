@@ -67,8 +67,8 @@ class PollPlugin(BasePlugin):
             return True
 
         # poll voting command
-        match_y = re.search(r"^\s*\bpoll\s+(?:y|yes|yeah?|sure|yep|yee+|yah?)\b(?:\s+(\S+))?", text, re.IGNORECASE)
-        match_n = re.search(r"^\s*\bpoll\s+(?:n|no|na+h?|nope|nay)\b(?:\s+(\S+))?", text, re.IGNORECASE)
+        match_y = re.search(r"^\s*\bpoll\s+(?:y|ye+s+|yeah?|su+re+|ye+p|yee+|yah?)\b(?:\s+(\S+))?", text, re.IGNORECASE)
+        match_n = re.search(r"^\s*\bpoll\s+(?:n|no+|na+h?|no+pe|nay)\b(?:\s+(\S+))?", text, re.IGNORECASE)
         if match_y or match_n:
             new_channel_name = (match_y or match_n).group(1)
             if new_channel_name is not None:
