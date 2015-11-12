@@ -50,9 +50,9 @@ class Botty(SlackBot):
         """Returns the text value of `message` if it is a valid text message, or `None` otherwise"""
         if message.get("type") == "message" and isinstance(message.get("ts"), str) and isinstance(message.get("channel"), str):
             if isinstance(message.get("text"), str) and isinstance(message.get("user"), str): # normal message
-                return self.bot.server_text_to_sendable_text(message["text"])
+                return self.server_text_to_sendable_text(message["text"])
             if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str) and isinstance(message["message"].get("text"), str): # edited message
-                return self.bot.server_text_to_sendable_text(message["message"]["text"])
+                return self.server_text_to_sendable_text(message["message"]["text"])
         return None
 
     def get_message_channel(self, message):

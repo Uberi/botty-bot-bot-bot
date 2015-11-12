@@ -2,7 +2,7 @@
 
 import re, json
 from os import path
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 
 import httplib2
@@ -57,13 +57,14 @@ class EventsPlugin(BasePlugin):
         eventsResult = calendar_service.events().list(
             calendarId = CALENDAR_ID,
             timeMin = start_timestamp,
-            maxResults = 5,
+            maxResults = 30,
             singleEvents = True,
             orderBy = "startTime"
         ).execute()
         events = eventsResult.get("items", [])
 
         now = datetime.now()
+        latest_event_cutoff = now + timedelta(days=7)
         result = []
         for event in events:
             if "dateTime" in event["start"]:
@@ -74,12 +75,14 @@ class EventsPlugin(BasePlugin):
                 end = dateutil.parser.parse(event["end"]["dateTime"]).astimezone(tzlocal()).replace(tzinfo=None) # end time in local time
             else:
                 end = dateutil.parser.parse(event["end"]["date"])
+            if start > latest_event_cutoff:
+                break
             summary = self.text_to_sendable_text(event["summary"])
             url = self.shorten_url(event["htmlLink"])
             if start.date() == end.date():
                 result.append("\u2022 {}*{}* from {} to {} on {} ({})".format("[HAPPENING NOW] " if start <= now < end else "", summary, start.strftime("%H:%M"), end.strftime("%H:%M"), start.strftime("%Y-%m-%d (%A)"), url))
             else:
                 result.append("\u2022 {}*{}* from {} to {} ({})".format("[HAPPENING NOW] " if start <= now < end else "", summary, start.strftime("%H:%M %Y-%m-%d (%A)"), end.strftime("%H:%M %Y-%m-%d (%A)"), url))
-        self.respond("UPCOMING EVENTS:\n{}".format("\n".join(result)))
+        self.respond("UPCOMING EVENTS IN THE NEXT 7 DAYS:\n{}".format("\n".join(result)))
 
         return True
