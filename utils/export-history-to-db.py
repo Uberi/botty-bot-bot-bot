@@ -44,7 +44,7 @@ connection = sqlite3.connect(SQLITE_DATABASE)
 connection.execute("DROP TABLE IF EXISTS messages")
 connection.execute("DROP TABLE IF EXISTS users")
 connection.execute("DROP TABLE IF EXISTS channels")
-connection.execute("CREATE TABLE messages (timestamp INTEGER, timestamp_order INTEGER, user_id TEXT, channel_id TEXT, value TEXT, PRIMARY KEY (timestamp, timestamp_order))")
+connection.execute("CREATE TABLE messages (timestamp INTEGER, timestamp_order INTEGER, channel_id TEXT, user_id TEXT, value TEXT, PRIMARY KEY (timestamp, timestamp_order, channel_id))")
 connection.execute("CREATE TABLE users (user_id TEXT PRIMARY KEY, user_name TEXT, user_real_name TEXT, is_bot INTEGER)")
 connection.execute("CREATE TABLE channels (channel_id TEXT PRIMARY KEY, channel_name TEXT, purpose TEXT)")
 
