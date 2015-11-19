@@ -67,10 +67,10 @@ class Botty(SlackBot):
             return message["message"]["user"]
         return None
 
-    def respond(self, text):
-        """Say `text` in the channel that most recently received a message."""
+    def respond(self, sendable_text):
+        """Say `sendable_text` in the channel that most recently received a message."""
         assert self.last_message_channel_id is not None, "No message to respond to"
-        self.say(self.last_message_channel_id, text)
+        self.say(self.last_message_channel_id, sendable_text)
 
 botty = Botty(SLACK_TOKEN)
 

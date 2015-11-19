@@ -38,7 +38,7 @@ class HaikuPlugin(BasePlugin):
         something something teleport
         that thing with that guy
         ```
-        #general    | Me: pls haiku me
+        #general    | Me: haiku me pls
         #general    | Botty: ```
         that's pretty good news
         but you can control that stuff
@@ -77,7 +77,7 @@ class HaikuPlugin(BasePlugin):
     def on_message(self, message):
         text = self.get_message_text(message)
         if text is None: return False
-        if not re.search(r"\bpls\s+haiku\s+me\b", text, re.IGNORECASE): return False
+        if not re.search(r"\b(?:pls\s+haiku\s+me|haiku\s+me\s+pls)\b", text, re.IGNORECASE): return False
 
         # generate haiku
         self.respond_raw("```\n{}\n{}\n{}\n```".format(
