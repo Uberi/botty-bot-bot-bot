@@ -58,11 +58,12 @@ def get_history_files():
 
 def get_message_text(message):
     """Returns the text value of `message` if it is a valid text message, or `None` otherwise"""
-    if message.get("type") != "message": return None
-    if not isinstance(message.get("user"), str): return None
-    if not isinstance(message.get("text"), str): return None
-    if not isinstance(message.get("ts"), str): return None
-    return server_text_to_sendable_text(message["text"])
+    if message.get("type") == "message" and isinstance(message.get("ts"), str):
+        if isinstance(message.get("text"), str) and isinstance(message.get("user"), str): # normal message
+            return server_text_to_sendable_text(message["text"])
+        if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str) and isinstance(message["message"].get("text"), str): # edited message
+            return server_text_to_sendable_text(message["message"]["text"])
+    return None
 
 connection = sqlite3.connect(SQLITE_DATABASE)
 connection.execute("DROP TABLE IF EXISTS counts")
