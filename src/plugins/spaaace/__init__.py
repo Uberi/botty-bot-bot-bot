@@ -36,7 +36,7 @@ class SpaaacePlugin(BasePlugin):
         if text is None or channel is None or user is None: return False
         match = re.search(r"\bquote\s+me(?:\s+on\s+this)?\s*?,?\s+(?:but\s+)?(.+)", text, re.IGNORECASE)
         if not match: return False
-        query = match.group(1)
+        query = self.sendable_text_to_text(match.group(1))
         user_name = self.get_user_name_by_id(user)
 
         # generate segments of text
