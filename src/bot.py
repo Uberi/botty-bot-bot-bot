@@ -81,6 +81,7 @@ class SlackBot:
     def get_channel_name_by_id(self, channel_id):
         """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
         assert isinstance(channel_id, str), "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        channel_id = channel_id.lstrip("#")
         for entry in self.client.server.channels:
             if entry.id == channel_id: return entry.name
         return None
