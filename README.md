@@ -36,6 +36,8 @@ If an plugin's `on_message` method returns a truthy value, all plugins after it 
 
 Plugins inherit a number of methods from the `BasePlugin` class:
 
+* `self.untag_word(word)` - returns the word `word` where characters are replaced with Unicode homoglyphs such that they are unlikely to highlight users.
+    * Useful for if you want to send a user's name without highlighting them.
 * `self.get_message_text(message)` - returns the text value of `message` if it is a valid text message, or `None` otherwise.
 * `self.get_message_channel(message)` - returns the ID of the channel containing `message` if there is one, or `None` otherwise.
 * `self.get_message_sender(message)` - returns the ID of the user who sent `message` if there is one, or `None` otherwise.
@@ -172,7 +174,8 @@ If previously downloaded history is present, the new history will be transparent
     $ python3 src/process-history.py --help
     usage: process-history.py [-h] [--history HISTORY] [-f FILTER_FROM]
                               [-t FILTER_TO] [-c FILTER_CHANNEL] [-u FILTER_USER]
-                              [-i FILTER_CONTAINS] [-s {time,channel,user,text}]
+                              [-i FILTER_TEXT] [-s {time,channel,user,text}]
+                              [-r CONTEXT]
     
     Slice and filter Slack chat history.
     
@@ -187,23 +190,22 @@ If previously downloaded history is present, the new history will be transparent
                             Show only messages before or at a date/time (e.g.,
                             "8pm september 9 2015").
       -c FILTER_CHANNEL, --filter-channel FILTER_CHANNEL
-                            Show only messages within a channel (e.g., "general",
-                            "#general"). If multiple --filter-channel arguments
-                            are specified, messages in any of the given channels
-                            pass the filter.
+                            Show only messages within channels with names matching
+                            a specific regular expression (e.g., "general",
+                            "general|random").
       -u FILTER_USER, --filter-user FILTER_USER
-                            Show only messages by a specific user (e.g.,
-                            "@anthony", "anthony", "Anthony Zhang"). If multiple
-                            --filter-user arguments are specified, messages by any
-                            of the given users pass the filter.
-      -i FILTER_CONTAINS, --filter-contains FILTER_CONTAINS
-                            Show only messages that contain a specified string
-                            (e.g., "wing night", "nuggets"). If multiple --filter-
-                            contains arguments are specified, messages containing
-                            any of the given strings pass the filter.
+                            Show only messages by users with usernames or real
+                            names matching a specific regular expression (e.g.,
+                            "anthony", "[AO]nthon[yo] Zh[ao]ng").
+      -i FILTER_TEXT, --filter-text FILTER_TEXT
+                            Show only messages with text matching a specified
+                            regular expression (e.g., "wings?",
+                            "chicken\s+nuggets").
       -s {time,channel,user,text}, --sort {time,channel,user,text}
-                            Show only messages that contain a specified string
-                            (e.g., "wing night", "nuggets").
+                            Sort the resulting messages by the specified criteria.
+      -r CONTEXT, --context CONTEXT
+                            Show a specified number of surrounding messages around
+                            the channel in each matched message.
 
 `example-process-history.sh` is a Bash script that shows a sample usage of this utility, filtering out messages in the channel `#general` that include the phrase "wing night" or "nuggets", sorted alphabetically by username.
 

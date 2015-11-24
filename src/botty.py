@@ -117,6 +117,9 @@ botty.register_plugin(BigTextPlugin(botty))
 from plugins.uw_courses import UWCoursesPlugin
 botty.register_plugin(UWCoursesPlugin(botty))
 
+from plugins.spaaace import SpaaacePlugin
+botty.register_plugin(SpaaacePlugin(botty))
+
 # start administrator console in production mode
 if not DEBUG:
     # define useful functions for administration
