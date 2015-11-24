@@ -14,7 +14,7 @@ sudo pip3 install wikipedia
 sudo pip3 install sympy
 sudo pip3 install pyfiglet
 sudo pip3 install google-api-python-client
-sudo pip3 install pillow
+sudo apt-get install python3-pillow
 sudo pip3 install imgurpython
 
 # modules used by web interface
