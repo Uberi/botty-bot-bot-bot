@@ -32,6 +32,8 @@ However, it is a good idea to avoid accessing fields of the JSON dictionary dire
 
 If an plugin's `on_message` method returns a truthy value, all plugins after it will not have their `on_message` method called for that message - returning a truthy value stops message processing for the current message, representing that the message has been fully handled.
 
+Plugins can interact with messages easily using the `self.say` (say something) and `self.react` (react to a message) methods. In message handlers, the `self.respond` (respond to the most recent message) and `sely.reply` (react to the most recent message) methods can be used instead, which are a bit easier to use.
+
 ### API
 
 Plugins inherit a number of methods from the `BasePlugin` class:
@@ -39,16 +41,29 @@ Plugins inherit a number of methods from the `BasePlugin` class:
 * `self.untag_word(word)` - returns the word `word` where characters are replaced with Unicode homoglyphs such that they are unlikely to highlight users.
     * Useful for if you want to send a user's name without highlighting them.
 * `self.get_message_text(message)` - returns the text value of `message` if it is a valid text message, or `None` otherwise.
+* `self.get_message_timestamp(message)` - returns the timestamp of `message` if there is one, or `None` otherwise.
 * `self.get_message_channel(message)` - returns the ID of the channel containing `message` if there is one, or `None` otherwise.
 * `self.get_message_sender(message)` - returns the ID of the user who sent `message` if there is one, or `None` otherwise.
 * `self.say(channel_id, sendable_text)` - send a message containing `sendable_text` to the channel with ID `channel_id`.
     * `sendable_text` must be sendable text (see "Types of Text" for details).
     * Plain text can be converted into sendable text using `self.text_to_sendable_text`.
-* `self.say_raw(channel_id, text)` - send a message containing `text` to the channel with ID `channel_id`.
-    * Does the same thing as `self.say`, but `text` is plain text instead of sendable text.
-* `self.respond(text)` - does the same thing as `self.say`, but always sends the message to the channel of the message we most recently processed.
+    * Returns a message ID (used internally, unique to every `SlackBot` instance).
+* `self.say_raw(channel_id, text)` - same as `self.say`, but `text` is plain text instead of sendable text.
+* `self.say_complete(channel_id, text)` and `self.say_complete(channel_id, text)` - same as `self.say` and `self.say_raw`, but waits for the message to fully send before returning.
+    * Returns the message timestamp.
+    * Raises a `TimeoutError` if sending times out, or a `ValueError` if sending fails.
+* `self.respond(sendable_text)` - does the same thing as `self.say`, but always sends the message to the channel of the message we most recently processed.
     * If this is called within an `on_message(message)` handler, the message will always be sent to the same channel as the one containing `message`.
-* `self.respond_raw(text)` - does the same thing as `self.respond`, but `text` is plain text instead of sendable text.
+* `self.respond_raw(text)` - same as `self.respond`, but `text` is plain text instead of sendable text.
+* `self.respond_complete(sendable_text)` and `self.respond_raw_complete(text)` - same as `self.respond` and `self.respond_raw`, but waits for the message to fully send before returning.
+    * Returns the message timestamp.
+    * Raises a `TimeoutError` if sending times out, or a `ValueError` if sending fails.
+* `react(channel_id, timestamp, emoticon)` - react with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`.
+* `unreact(channel_id, timestamp, emoticon)` - unreact with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`.
+* `reply(emoticon)` - react with `emoticon` to the most recently received message.
+    * If this is called within an `on_message(message)` handler, the reaction will be to `message`.
+* `unreply(emoticon)` - unreact with `emoticon` to the most recently received message.
+    * If this is called within an `on_message(message)` handler, the reaction will be to `message`.
 * `self.get_channel_name_by_id(channel_id)` - returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid.
     * Channels include public channels, direct messages with other users, and private groups.
 * `self.get_channel_id_by_name(channel_name)` - returns the ID of the channel with name `channel_name`, or `None` if there is no such channel.
@@ -59,6 +74,7 @@ Plugins inherit a number of methods from the `BasePlugin` class:
 * `self.text_to_sendable_text(text)` - returns `text`, a plain text string, converted into sendable text.
 * `self.sendable_text_to_text(sendable_text)` - returns `sendable_text`, a sendable text string, converted into plain text.
     * The transformation can lose some information for escape sequences, such as link labels.
+* `self.get_bot_user_id()` - returns the user ID of the current `SlackBot` instance's Slack account.
 
 Plugins are registered in `src/botty.py`. Suppose you have a plugin called `TestPlugin` (in other words, a class called `TestPlugin`) in `src/plugins/test.py`. Then, in `src/botty.py`, you would add the following with the other plugin imports:
 

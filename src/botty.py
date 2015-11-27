@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, logging
+from collections import deque
 
 from bot import SlackBot
 
@@ -29,6 +30,8 @@ class Botty(SlackBot):
         super().__init__(token)
         self.plugins = []
         self.last_message_channel_id = None
+        self.last_message_timestamp = None
+        self.recent_events = deque(maxlen=300) # store the last 300 events
 
     def register_plugin(self, plugin_instance):
         self.plugins.append(plugin_instance)
@@ -39,8 +42,15 @@ class Botty(SlackBot):
 
     def on_message(self, message):
         self.logger.debug("received message message {}".format(message))
+        timestamp = self.get_message_timestamp(message)
+        if timestamp: self.last_message_timestamp = timestamp
         channel = self.get_message_channel(message)
         if channel: self.last_message_channel_id = channel
+
+        # save recent message events
+        if message.get("type") not in ("ping", "pong"):
+            self.recent_events.append(message)
+
         for plugin in self.plugins:
             if plugin.on_message(message):
                 self.logger.info("message handled by {}: {}".format(plugin.__class__.__name__, message))
@@ -53,6 +63,11 @@ class Botty(SlackBot):
                 return self.server_text_to_sendable_text(message["text"])
             if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str) and isinstance(message["message"].get("text"), str): # edited message
                 return self.server_text_to_sendable_text(message["message"]["text"])
+        return None
+
+    def get_message_timestamp(self, message):
+        """Returns the timestamp of `message` if there is one, or `None` otherwise"""
+        if isinstance(message.get("ts"), str): return message["ts"]
         return None
 
     def get_message_channel(self, message):
@@ -68,24 +83,26 @@ class Botty(SlackBot):
         return None
 
     def respond(self, sendable_text):
-        """Say `sendable_text` in the channel that most recently received a message."""
+        """Say `sendable_text` in the channel that most recently received a message, returning the message ID (unique within each `SlackBot` instance)."""
         assert self.last_message_channel_id is not None, "No message to respond to"
-        self.say(self.last_message_channel_id, sendable_text)
+        return self.say(self.last_message_channel_id, sendable_text)
+
+    def respond_complete(self, sendable_text):
+        """Say `sendable_text` in the channel that most recently received a message, waiting until the message is successfully sent, returning the message timestamp."""
+        assert self.last_message_channel_id is not None, "No message to respond to"
+        return self.say_complete(self.last_message_channel_id, sendable_text)
+
+    def reply(self, emoticon):
+        """React with `emoticon` to the most recently received message."""
+        assert self.last_message_channel_id is not None and self.last_message_timestamp is not None, "No message to reply to"
+        return self.react(self.last_message_channel_id, self.last_message_timestamp, emoticon)
+
+    def unreply(self, emoticon):
+        """Unreact with `emoticon` to the most recently received message."""
+        assert self.last_message_channel_id is not None and self.last_message_timestamp is not None, "No message to unreply to"
+        return self.unreact(self.last_message_channel_id, self.last_message_timestamp, emoticon)
 
 botty = Botty(SLACK_TOKEN)
-
-# add a recent message logging plugin
-from collections import deque
-from plugins.utilities import BasePlugin
-recent_events = deque(maxlen=500)
-class EventHistoryPlugin(BasePlugin):
-    def __init__(self, bot):
-        super().__init__(bot)
-    def on_message(self, message):
-        if message.get("type") in ("ping", "pong"): return False # ignore ping and pong messages
-        recent_events.append(message)
-        return False
-botty.register_plugin(EventHistoryPlugin(botty))
 
 from plugins.arithmetic import ArithmeticPlugin
 botty.register_plugin(ArithmeticPlugin(botty))

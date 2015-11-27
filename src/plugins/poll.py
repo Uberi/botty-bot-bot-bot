@@ -34,29 +34,59 @@ class PollPlugin(BasePlugin):
     """
     def __init__(self, bot):
         super().__init__(bot)
-        self.current_polls = {} # mapping from channel IDs to 3-tuple poll entries
+        self.current_polls = {} # mapping from channel IDs to poll entries
 
     def on_message(self, message):
-        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
-        if text is None or channel is None or user is None: return False
+        user = self.get_message_sender(message)
+        if user is None: return False
+        user_name = self.get_user_name_by_id(user)
+
+        # reaction voting
+        if message.get("type") == "reaction_added" and user != self.get_bot_user_id(): # reaction that is not our own
+            channel = message.get("item", {}).get("channel")
+            if channel not in self.current_polls: return False # check if reaction was posted in a channel with an active poll
+            message_timestamp = self.current_polls[channel]["message_timestamp"]
+            timestamp = message.get("item", {}).get("ts")
+            if timestamp is None or timestamp != message_timestamp: return False # check if message is a reaction on a poll message
+
+            if message.get("reaction") == "+1": # vote to agree
+                self.current_polls[channel]["user_votes"][user_name] = 1
+                return True
+            elif message.get("reaction") == "-1": # vote to disagree
+                self.current_polls[channel]["user_votes"][user_name] = 0
+                return True
+            return False
+
+        channel, text = self.get_message_channel(message), self.get_message_text(message)
+        if channel is None or text is None: return False
 
         # poll starting commands
         match = re.search(r"^\s*\bpoll\s+(?:start|begin|create)\b(?:\s+(.+))?", text, re.IGNORECASE)
         if match:
             description = match.group(1)
-            self.current_polls[channel] = (description, {}, False) # poll description, mapping from user names to voted values, whether the poll is secret
 
-            self.respond(
+            message_timestamp = self.respond_complete(
                 ("*POLL STARTED*\n" if description is None else "*POLL STARTED:* {}\n".format(description)) +
-                "\u2022 Say `poll y` to publicly agree\n" +
-                "\u2022 Say `poll n` to publicly disagree\n" +
+                "\u2022 React with :+1: or say `poll y` to publicly agree\n" +
+                "\u2022 React with :-1: or say `poll n` publicly disagree\n" +
                 "\u2022 Say `poll status` to check results"
             )
+
+            self.current_polls[channel] = {
+                "description": description,
+                "user_votes": {},
+                "is_secret": False,
+                "message_timestamp": message_timestamp,
+            }
+
+            # add reactions so people can click on them
+            self.bot.client.api_call("reactions.add", name="+1", channel=channel, timestamp=message_timestamp) # vote up reaction
+            self.bot.client.api_call("reactions.add", name="-1", channel=channel, timestamp=message_timestamp) # vote down reaction
+
             return True
         match = re.search(r"^\s*\bpoll\s+(?:private|privately|secret|secretly|anon|anonymous|anonymously)\b(?:\s+(.+))?", text, re.IGNORECASE)
         if match:
             description = match.group(1)
-            self.current_polls[channel] = (description, {}, True) # poll description, mapping from user names to voted values, whether the poll is secret
 
             self.respond(
                 ("*ANONYMOUS POLL STARTED*\n" if description is None else "*ANONYMOUS POLL STARTED:* {}\n".format(description)) +
@@ -64,6 +94,13 @@ class PollPlugin(BasePlugin):
                 "\u2022 Say `/msg @botty poll n #POLL_CHANNEL` to secretly disagree\n" +
                 "\u2022 Say `poll status` to check results"
             )
+
+            self.current_polls[channel] = {
+                "description": description,
+                "user_votes": {},
+                "is_secret": True,
+                "message_timestamp": None,
+            }
             return True
 
         # poll voting command
@@ -82,8 +119,7 @@ class PollPlugin(BasePlugin):
                 self.respond_raw("there's no poll going on right now in {}".format(self.get_channel_name_by_id(channel)))
                 return True
 
-            user_name = self.get_user_name_by_id(user)
-            self.current_polls[channel][1][user_name] = 1 if match_y else 0
+            self.current_polls[channel]["user_votes"][user_name] = 1 if match_y else 0 # apply the vote
             return True
 
         # poll checking command
@@ -93,23 +129,24 @@ class PollPlugin(BasePlugin):
                 self.respond_raw("there's no poll going on right now in {}".format(self.get_channel_name_by_id(channel)))
                 return True
 
-            description, voters, is_private = self.current_polls[channel]
+            poll = self.current_polls[channel]
+            voters = poll["user_votes"]
             if not voters:
-                self.respond(("*POLL STATUS*\n" if description is None else "*POLL STATUS:* {}\n".format(description)) + "Nobody voted :(")
+                self.respond(("*POLL STATUS*\n" if poll["description"] is None else "*POLL STATUS:* {}\n".format(poll["description"])) + "Nobody voted :(")
                 return True
             agree = sum(voters.values())
             disagree = len(voters) - agree
             agree_percent, disagree_percent = round(100 * agree / len(voters)), round(100 * disagree / len(voters))
-            if is_private:
+            if poll["is_secret"]:
                 self.respond(
-                    ("*ANONYMOUS POLL STATUS*\n" if description is None else "*ANONYMOUS POLL STATUS:* {}\n".format(description)) +
+                    ("*ANONYMOUS POLL STATUS*\n" if poll["description"] is None else "*ANONYMOUS POLL STATUS:* {}\n".format(poll["description"])) +
                     "of the {} people who voted, {} people agree ({}%), and {} disagree ({}%)\n".format(
                         len(voters), agree, agree_percent, disagree, disagree_percent
                     ) + "`|" + agree_percent * "#" + (100 - agree_percent) * "-"  + "|`"
                 )
             else:
                 self.respond(
-                    ("*POLL STATUS*\n" if description is None else "*POLL STATUS:* {}\n".format(description)) +
+                    ("*POLL STATUS*\n" if poll["description"] is None else "*POLL STATUS:* {}\n".format(poll["description"])) +
                     "of the {} people who voted, {} people agree ({}%), and {} disagree ({}%)\n".format(
                         len(voters), agree, agree_percent, disagree, disagree_percent
                     ) + "`|" + agree_percent * "#" + (100 - agree_percent) * "-"  + "|`\n" +

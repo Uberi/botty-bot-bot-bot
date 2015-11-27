@@ -4,6 +4,7 @@ import time, json, sys, re
 from datetime import datetime
 import traceback
 import logging
+from collections import deque
 
 from slackclient import SlackClient
 
@@ -16,8 +17,10 @@ class SlackBot:
         if logger is None: self.logger = logging.getLogger(self.__class__.__name__)
         else: self.logger = logger
 
-        # rate limit sending
-        self.last_say_time = 0
+        self.max_message_id = 1 # every message sent over RTM needs a unique positive integer ID - this should technically be handled by the Slack library, but that's broken as of now
+        self.unprocessed_messages = deque() # store unprocessed messages to allow message peeking
+        self.last_say_time = 0 # store last message send timestamp to rate limit sending
+        self.bot_user_id = None # ID of this bot user
 
     def on_step(self):
         self.logger.info("step handler called")
@@ -34,11 +37,30 @@ class SlackBot:
                 time.sleep(5)
         self.logger.info("shutting down...")
 
+    def get_unprocessed_messages(self):
+        result = list(self.unprocessed_messages) + self.client.rtm_read()
+        self.unprocessed_messages.clear()
+        return result
+
+    def peek_unprocessed_messages(self):
+        self.unprocessed_messages.extend(self.client.rtm_read())
+        return list(self.unprocessed_messages)
+
+    def peek_new_messages(self):
+        new_messages = self.client.rtm_read()
+        self.unprocessed_messages.extend(new_messages)
+        return list(new_messages)
+
     def start(self):
         # connect to the Slack Realtime Messaging API
         self.logger.info("connecting to Slack realtime messaging API...")
         if not self.client.rtm_connect(): raise ConnectionError("Could not connect to Slack realtime messaging API (possibly a bad token or network issue)")
         self.logger.info("connected to Slack realtime messaging API")
+
+        # obtain the bot credentials
+        authentication = json.loads(self.client.api_call("auth.test").decode("utf-8"))
+        assert authentication["ok"], "Could not authenticate with Slack API"
+        self.bot_user_id = authentication["user_id"]
 
         last_ping = time.time()
         while True:
@@ -48,7 +70,7 @@ class SlackBot:
                 self.logger.error("step processing threw exception:\n{}".format(traceback.format_exc()))
 
             # call all the message callbacks for each newly received message
-            for message in self.client.rtm_read():
+            for message in self.get_unprocessed_messages():
                 try: self.on_message(message)
                 except KeyboardInterrupt: raise
                 except Exception:
@@ -58,12 +80,12 @@ class SlackBot:
             if time.time() - last_ping > 5:
                 self.client.server.ping()
                 last_ping = time.time()
-            
-            # avoid checking the socket too often
-            time.sleep(0.1)
+
+            # delay to avoid checking the socket too often
+            time.sleep(0.01)
 
     def say(self, channel_id, sendable_text):
-        """Say `sendable_text` in the channel with ID `channel_id`."""
+        """Say `sendable_text` in the channel with ID `channel_id`, returning the message ID (unique within each `SlackBot` instance)."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         assert isinstance(sendable_text, str), "`text` must be a string rather than \"{}\"".format(sendable_text)
 
@@ -76,12 +98,58 @@ class SlackBot:
             self.last_say_time = current_time
 
         self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), sendable_text))
-        self.client.rtm_send_message(channel_id, sendable_text)
+
+        # the correct method to use here is `rtm_send_message`, but it's technically broken since it doesn't send the message ID so we're going to do this properly ourselves
+        message_id = self.max_message_id
+        self.max_message_id += 1
+        self.client.server.send_to_websocket({
+            "id": message_id,
+            "type": "message",
+            "channel": channel_id,
+            "text": sendable_text,
+        })
+        return message_id
+
+    def say_complete(self, channel_id, sendable_text, timeout = 5):
+        """Say `sendable_text` in the channel with ID `channel_id`, waiting for the message to finish sending (raising a `TimeoutError` if this takes more than `timeout` seconds), returning the message timestamp."""
+        assert float(timeout) > 0, "`timeout` must be a positive number rather than \"{}\"".format(timeout)
+        message_id = self.say(channel_id, sendable_text)
+        message_timestamp = None
+        start_time = time.time()
+        while message_timestamp is None and time.time() - start_time < timeout:
+            # peek at new messages to see if the response is written
+            for message in self.peek_new_messages():
+                if "ok" in message and message.get("reply_to") == message_id: # received reply for the sent message
+                    if not message["ok"]: raise ValueError("Message sending error: {}".format(message.get("error", {}).get("msg")))
+                    assert isinstance(message.get("ts"), str), "Invalid message timestamp: {}".format(message.get("ts"))
+                    message_timestamp = message["ts"]
+                    break
+            else:
+                time.sleep(0.01)
+        if message_timestamp is None: raise TimeoutError("Message sending timed out")
+        return message_timestamp
+
+    def react(self, channel_id, timestamp, emoticon):
+        """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
+        assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        assert isinstance(timestamp, str), "`timestamp` must be a string rather than \"{}\"".format(sendable_text)
+        assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
+        emoticon = emoticon.strip(":")
+        self.logger.info("adding reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
+        self.client.api_call("reactions.add", name=emoticon, channel=channel, timestamp=timestamp)
+
+    def unreact(self, channel_id, timestamp, emoticon):
+        """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
+        assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        assert isinstance(timestamp, str), "`timestamp` must be a string rather than \"{}\"".format(sendable_text)
+        assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
+        emoticon = emoticon.strip(":")
+        self.logger.info("removing reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
+        self.client.api_call("reactions.remove", name=emoticon, channel=channel, timestamp=timestamp)
 
     def get_channel_name_by_id(self, channel_id):
         """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
         assert isinstance(channel_id, str), "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
-        channel_id = channel_id.lstrip("#")
         for entry in self.client.server.channels:
             if entry.id == channel_id: return entry.name
         return None
@@ -164,11 +232,11 @@ class SlackBot:
         def process_special_sequence(match):
             original, body = match.group(0), match.group(1).split("|")[0]
             if body.startswith("#C"): # channel reference
-                channel_name = self.get_channel_name_by_id(body)
+                channel_name = self.get_channel_name_by_id(body[1:])
                 if channel_name is None: return ""
                 return "#" + channel_name
             if body.startswith("@U"): # user reference
-                user_name = self.get_user_name_by_id(body)
+                user_name = self.get_user_name_by_id(body[1:])
                 if user_name is None: return ""
                 return "@" + user_name
             if body.startswith("!"): # special command
@@ -204,7 +272,9 @@ class SlackDebugBot(SlackBot):
         if logger is None: self.logger = logging.getLogger(self.__class__.__name__)
         else: self.logger = logger
 
+        self.max_message_id = 1
         self.channel_name = "#general"
+        self.bot_user_id = "botty"
 
     def start_loop(self): self.start()
 
@@ -234,16 +304,43 @@ class SlackDebugBot(SlackBot):
                 while not incoming_message_queue.empty():
                     self.on_message(incoming_message_queue.get())
                     incoming_message_queue.task_done()
-                time.sleep(0.1)
+                time.sleep(0.01)
         except KeyboardInterrupt: pass
 
     def say(self, channel_id, sendable_text):
-        """Say `sendable_text` in the channel with ID `channel_id`."""
+        """Say `sendable_text` in the channel with ID `channel_id`, returning the message ID (unique within each `SlackBot` instance)."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         assert isinstance(sendable_text, str), "`sendable_text` must be a string rather than \"{}\"".format(sendable_text)
 
         self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), sendable_text))
         print("\r\033[K" + "{:<12}| Botty: {}".format(self.get_channel_name_by_id(channel_id), sendable_text)) # clear the current line using Erase in Line ANSI escape code
+        print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
+
+        message_id = self.max_message_id
+        self.max_message_id += 1
+        return message_id
+
+    def say_complete(self, channel_id, sendable_text):
+        """Say `sendable_text` in the channel with ID `channel_id`, waiting for the message to finish sending (raising a `TimeoutError` if this takes more than `timeout` seconds), returning the message timestamp."""
+        self.say(channel_id, sendable_text)
+        return time.time()
+
+    def react(self, channel_id, timestamp, emoticon):
+        """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
+        assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        assert isinstance(timestamp, str), "`timestamp` must be a string rather than \"{}\"".format(sendable_text)
+        assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
+        self.logger.info("adding reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
+        print("\r\033[K" + "{:<12}| Botty reacts with {}".format(self.get_channel_name_by_id(channel_id), emoticon)) # clear the current line using Erase in Line ANSI escape code
+        print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
+
+    def unreact(self, channel_id, timestamp, emoticon):
+        """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
+        assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        assert isinstance(timestamp, str), "`timestamp` must be a string rather than \"{}\"".format(sendable_text)
+        assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
+        self.logger.info("removing reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
+        print("\r\033[K" + "{:<12}| Botty unreacts with {}".format(self.get_channel_name_by_id(channel_id), emoticon)) # clear the current line using Erase in Line ANSI escape code
         print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
 
     def get_channel_name_by_id(self, channel_id):
@@ -269,3 +366,7 @@ class SlackDebugBot(SlackBot):
     def get_direct_message_channel_id_by_user_id(self, user_id):
         """Returns the channel ID of the direct message with the user with ID `user_id`, or `None` if the ID is invalid."""
         return "DM with {}".format(user_id)
+
+    def administrator_console(self, namespace):
+        """Start an interactive administrator Python console with namespace `namespace`."""
+        raise NotImplementedError("The administrator console is not supported in the debug Slack bot.")
