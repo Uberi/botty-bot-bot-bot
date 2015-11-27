@@ -73,11 +73,11 @@ class PersonalityPlugin(BasePlugin):
 
         match = re.search(r"^\s*(\?+)\s*$", text, re.IGNORECASE)
         if match:
-            self.respond_raw("{}?".format(match.group(1)))
+            self.reply("question")
             return True
         match = re.search(r"^\s*(!+)\s*$", text, re.IGNORECASE)
         if match:
-            self.respond_raw("{}!".format(match.group(1)))
+            self.reply("exclamation")
             return True
 
         # compute the number of times different people have repeated it

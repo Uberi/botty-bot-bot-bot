@@ -80,8 +80,8 @@ class PollPlugin(BasePlugin):
             }
 
             # add reactions so people can click on them
-            self.bot.client.api_call("reactions.add", name="+1", channel=channel, timestamp=message_timestamp) # vote up reaction
-            self.bot.client.api_call("reactions.add", name="-1", channel=channel, timestamp=message_timestamp) # vote down reaction
+            self.react(channel, message_timestamp, "+1")
+            self.react(channel, message_timestamp, "-1")
 
             return True
         match = re.search(r"^\s*\bpoll\s+(?:private|privately|secret|secretly|anon|anonymous|anonymously)\b(?:\s+(.+))?", text, re.IGNORECASE)
