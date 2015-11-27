@@ -136,7 +136,7 @@ class SlackBot:
         assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
         emoticon = emoticon.strip(":")
         self.logger.info("adding reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
-        self.client.api_call("reactions.add", name=emoticon, channel=channel, timestamp=timestamp)
+        self.client.api_call("reactions.add", name=emoticon, channel=channel_id, timestamp=timestamp)
 
     def unreact(self, channel_id, timestamp, emoticon):
         """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
@@ -145,7 +145,7 @@ class SlackBot:
         assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
         emoticon = emoticon.strip(":")
         self.logger.info("removing reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
-        self.client.api_call("reactions.remove", name=emoticon, channel=channel, timestamp=timestamp)
+        self.client.api_call("reactions.remove", name=emoticon, channel=channel_id, timestamp=timestamp)
 
     def get_channel_name_by_id(self, channel_id):
         """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
