@@ -86,8 +86,8 @@ class PersonalityPlugin(BasePlugin):
         else:
             self.last_entries[channel] = [text, user, 1]
 
-        # repeat this message if other people have repeated it enough times
-        if self.last_entries[channel][2] >= self.message_repeated_threshold:
+        # repeat this message if other people have repeated it enough times, 50% of the time
+        if self.last_entries[channel][2] >= self.message_repeated_threshold and random.random() < 0.5:
             self.respond(text) # repeat the message
             del self.last_entries[channel]
             return True

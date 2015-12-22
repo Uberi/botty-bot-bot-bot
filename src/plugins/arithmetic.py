@@ -55,7 +55,8 @@ class ArithmeticPlugin(BasePlugin):
 
         expression = evaluate_with_time_limit(query)
         if isinstance(expression, Exception): # evaluation resulted in error
-            self.respond_raw("bad expression, {}".format(expression))
+            message = random.choice(["s a d e x p r e s s i o n s", "wat", "results hazy, try again later", "cloudy with a chance of thunderstorms", "oh yeah, I learned all about that in my sociology class", "eh too lazy, get someone else to do it", "would you prefer the truth or a lie?", "nice try", "you call that an expression?"])
+            self.respond_raw("{} ({})".format(message, expression))
         elif expression is None: # evaluation timed out
             self.respond_raw("tl;dr")
         else: # evaluation completed successfully
