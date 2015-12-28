@@ -91,4 +91,10 @@ class PersonalityPlugin(BasePlugin):
             self.respond(text) # repeat the message
             del self.last_entries[channel]
             return True
+
+        if re.search(r"^\s*(?:I\s+think|imo|if\s+you\s+ask\s+me)\b", text, re.IGNORECASE) and random.random() < 0.01:
+            user_name = self.get_user_name_by_id(user)
+            self.respond_raw(random.choice(["nah", "{}, I disagree".format(user_name), "I don't think so {}".format(user_name), "I doubt that {}".format(user_name)]))
+            return True
+
         return False
