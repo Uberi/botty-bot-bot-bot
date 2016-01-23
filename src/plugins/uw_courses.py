@@ -25,7 +25,7 @@ class UWCoursesPlugin(BasePlugin):
     Example invocations:
 
         #general    | Me: uw course cs341
-        #general    | Botty: *CS 341*: Algorithms (http://www.ucalendar.uwaterloo.ca/1516/COURSE/course-CS.html#CS341)
+        #general    | Botty: *CS 341* _(offered F, W, S)_: Algorithms (http://www.ucalendar.uwaterloo.ca/1516/COURSE/course-CS.html#CS341)
     """
     def __init__(self, bot):
         super().__init__(bot)
@@ -44,9 +44,10 @@ class UWCoursesPlugin(BasePlugin):
             if not match: continue
             subject, catalog = match.group(1), match.group(2)
             course_entry = uwapi("courses/{}/{}.json".format(subject, catalog))
-            result.append("*{subject} {catalog}*: {title} ({url})".format(
+            result.append("*{subject} {catalog}* (offered {offered}): {title} ({url})".format(
                 subject=course_entry["subject"], catalog=course_entry["catalog_number"],
-                title=course_entry["title"], url=course_entry["url"]
+                title=course_entry["title"], url=course_entry["url"],
+                offered=", ".join(course_entry["terms_offered"])
             ))
 
         if result: self.respond_raw("\n".join(result))

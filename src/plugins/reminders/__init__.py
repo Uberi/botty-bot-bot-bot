@@ -94,6 +94,7 @@ class RemindersPlugin(BasePlugin):
 
             # validate channel ID
             if target_name == "me": target_name = self.get_user_name_by_id(user)
+            if target_name == "us": target_name = self.get_channel_name_by_id(channel)
             target = self.get_channel_id_by_name(target_name)
             if target is None: # not a channel/private group/direct message
                 target_user = self.get_user_id_by_name(target_name)
