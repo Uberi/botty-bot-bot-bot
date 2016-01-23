@@ -44,10 +44,10 @@ class UWCoursesPlugin(BasePlugin):
             if not match: continue
             subject, catalog = match.group(1), match.group(2)
             course_entry = uwapi("courses/{}/{}.json".format(subject, catalog))
-            result.append("*{subject} {catalog}* (offered {offered}): {title} ({url})".format(
+            result.append("*{subject} {catalog}*{offered}: {title} ({url})".format(
                 subject=course_entry["subject"], catalog=course_entry["catalog_number"],
                 title=course_entry["title"], url=course_entry["url"],
-                offered=", ".join(course_entry["terms_offered"])
+                offered=" (offered {})".format(", ".join(course_entry["terms_offered"])) if course_entry["terms_offered"] else ""
             ))
 
         if result: self.respond_raw("\n".join(result))
