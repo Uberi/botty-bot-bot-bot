@@ -25,9 +25,8 @@ class AgarioPlugin(BasePlugin):
         self.food = "\u25E6"
 
     def on_step(self):
-        # check reminders no more than once every 10 seconds
         current_time = time.time()
-        if current_time - self.last_step_time < 1.5: return False
+        if current_time - self.last_step_time < 3: return False
         self.last_step_time = current_time
 
         if self.game_channel is None: return # no game going on
