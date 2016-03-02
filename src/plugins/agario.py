@@ -39,11 +39,12 @@ class AgarioPlugin(BasePlugin):
         text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
         if text is None or channel is None or user is None: return False
         text = self.sendable_text_to_text(text)
+        user_name = self.get_user_name_by_id(user)
 
         # game start command
         match = re.search(r"^\s*pls\s+agar\s+me((?:\s+\w+)*)\s*$", text, re.IGNORECASE)
         if match:
-            players = {self.get_user_name_by_id(user)}
+            players = {user_name}
             for i, player in enumerate(match.group(1).replace(",", " ").split()):
                 player_id = self.get_user_id_by_name(player.strip())
                 if player_id is None:
@@ -65,7 +66,7 @@ class AgarioPlugin(BasePlugin):
             self.end_game()
             return True
 
-        if user not in self.player_locations: return False # player isn't in the game
+        if user_name not in self.player_locations: return False # player isn't in the game
 
         # directional commands
         match = re.search(r"^\s*([<v>])\s*(-|/|)\s*$", text, re.IGNORECASE)
@@ -73,11 +74,11 @@ class AgarioPlugin(BasePlugin):
             direction, action = match.groups()
             offset = {"<": -1, "v": 0, ">": 1}[direction]
             if action == "-": # fire some mass in the desired direction
-                self.fire(user, offset * 2)
+                self.fire(user_name, offset * 2)
             elif action == "/":
-                self.split(user, offset * 2)
+                self.split(user_name, offset * 2)
             else:
-                self.player_movement[user] = offset
+                self.player_movement[user_name] = offset
             return True
 
         return False
