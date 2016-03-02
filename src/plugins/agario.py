@@ -27,7 +27,7 @@ class AgarioPlugin(BasePlugin):
     def on_step(self):
         # check reminders no more than once every 10 seconds
         current_time = time.time()
-        if current_time - self.last_step_time < 0.2: return False
+        if current_time - self.last_step_time < 1.5: return False
         self.last_step_time = current_time
 
         if self.game_channel is None: return # no game going on
@@ -66,14 +66,12 @@ class AgarioPlugin(BasePlugin):
             self.end_game()
             return True
 
-        #if user not in self.player_locations: return False # player isn't in the game #wip: debug
+        if user not in self.player_locations: return False # player isn't in the game
 
         # directional commands
-        #match = re.search(r"^\s*([<v>])\s*(-|/|)\s*$", text, re.IGNORECASE) #wip: debug
-        match = re.search(r"^\s*(\w+)\s+([<v>])\s*(-|/|)\s*$", text, re.IGNORECASE)
+        match = re.search(r"^\s*([<v>])\s*(-|/|)\s*$", text, re.IGNORECASE)
         if match:
-            #direction, action = match.groups() #wip: debug
-            user, direction, action = match.groups()
+            direction, action = match.groups()
             offset = {"<": -1, "v": 0, ">": 1}[direction]
             if action == "-": # fire some mass in the desired direction
                 self.fire(user, offset * 2)
