@@ -98,7 +98,7 @@ class Botty(SlackBot):
         return self.react(self.last_message_channel_id, self.last_message_timestamp, emoticon)
 
     def unreply(self, emoticon):
-        """Unreact with `emoticon` to the most recently received message."""
+        """Remove `emoticon` reaction from the most recently received message."""
         assert self.last_message_channel_id is not None and self.last_message_timestamp is not None, "No message to unreply to"
         return self.unreact(self.last_message_channel_id, self.last_message_timestamp, emoticon)
 
@@ -136,6 +136,9 @@ botty.register_plugin(UWCoursesPlugin(botty))
 
 from plugins.spaaace import SpaaacePlugin
 botty.register_plugin(SpaaacePlugin(botty))
+
+from plugins.agario import AgarioPlugin
+botty.register_plugin(AgarioPlugin(botty))
 
 # start administrator console in production mode
 if not DEBUG:

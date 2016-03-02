@@ -2,6 +2,7 @@
 .ipynb_checkpoints/
 *-custom.*
 *.db
+src/plugins/spaaace/generated_image.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

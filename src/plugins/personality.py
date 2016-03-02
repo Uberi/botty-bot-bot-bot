@@ -43,12 +43,8 @@ class PersonalityPlugin(BasePlugin):
         self.last_entries = {} # mapping from channel IDs to [last message in that channel, sender of last message, number of repetitions]
         self.message_repeated_threshold = 2 # minimum number of message repeats in a channel before we repeat it as well
 
-    def on_message(self, message):
-        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
-        if text is None or channel is None or user is None: return False
-
-        if re.search(r"\bbotty\s+(?:help|halp|\?+)\b", text, re.IGNORECASE):
-            self.respond_raw(
+        self.simple_pattern_actions = {
+            r"(?i)\bbotty\s+(?:help|halp|\?+)\b":    lambda match: self.respond_raw(
                 "botty's got you covered yo\n"
                 "say `botty help` to get a light bedtime read\n"
                 "say `calc SYMPY_EXPRESSION` to do some math\n"
@@ -64,27 +60,38 @@ class PersonalityPlugin(BasePlugin):
                 "say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding\n"
                 "say `quote me SOMETHING` if you're, like, a professional quote maker or something\n"
                 "say `thanks botty`, just because you should"
-            )
-            return True
+            ),
+            r"(?i)\b(?:thanks|thx|ty)\b.*\bbotty\b": lambda match: self.respond_raw(random.choice(
+                ["np", "np br0", "no prob", "don't mention it", "anytime"]
+            )),
+            r"(?i)^\s*(\?+)\s*$":                    lambda match: self.reply("question"),
+            r"(?i)^\s*(!+)\s*$":                     lambda match: self.reply("exclamation"),
+            r"(?i)\bdrink\s+some\s+water\b":         lambda match: self.reply("water_buffalo"),
+            r"(?i)\bfor\s+the\s+(cd|record)\b":      lambda match: self.reply("record"),
+            r"(?i)\begg":                            lambda match: self.reply("eggplant"),
+            r"(?i)\b(nugget|nugs?|chicken|eat)\b":   lambda match: self.reply("chicken"),
+            r"(?i)\b(sna+kes?|sneks?)\b":            lambda match: self.reply("snake"),
+            r"(?i)\baha\b":                          lambda match: self.reply("aha"),
+        }
 
-        if re.search(r"\b(?:thanks|thx|ty)\b.*\bbotty\b", text, re.IGNORECASE):
-            self.respond_raw(random.choice(["np", "np br0", "no prob", "don't mention it", "anytime"]))
-            return True
-
-        match = re.search(r"^\s*(\?+)\s*$", text, re.IGNORECASE)
-        if match:
-            self.reply("question")
-            return True
-        match = re.search(r"^\s*(!+)\s*$", text, re.IGNORECASE)
-        if match:
-            self.reply("exclamation")
-            return True
+    def on_message(self, message):
+        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
+        if text is None or channel is None or user is None: return False
 
         # compute the number of times different people have repeated it
         if channel in self.last_entries and text == self.last_entries[channel][0] and user != self.last_entries[channel][1]:
             self.last_entries[channel][2] += 1
         else:
             self.last_entries[channel] = [text, user, 1]
+
+        for pattern, action in self.simple_pattern_actions.items():
+            match = re.search(pattern, text)
+            if match:
+                action(match)
+                return True
+
+        if random.random() < 0.005:
+            self.reply("lenny")
 
         # repeat this message if other people have repeated it enough times, 50% of the time
         if self.last_entries[channel][2] >= self.message_repeated_threshold and random.random() < 0.5:

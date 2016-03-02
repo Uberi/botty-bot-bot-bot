@@ -92,7 +92,7 @@ class SlackBot:
         # rate limit sending to 1 per second, since that's the Slack API limit
         current_time = time.time()
         if current_time - self.last_say_time < 1:
-            time.sleep(max(0, current_time - self.last_say_time))
+            time.sleep(max(0, 1 - (current_time - self.last_say_time)))
             self.last_say_time += 1
         else:
             self.last_say_time = current_time
@@ -180,6 +180,8 @@ class SlackBot:
     def get_user_id_by_name(self, user_name):
         """Returns the ID of the user with username `user_name`, or `None` if the ID is invalid."""
         assert isinstance(user_name, str), "`user_name` must be a valid username rather than \"{}\"".format(user_name)
+
+        user_name = user_name.strip().lstrip("@")
 
         # check for user reference (these are formatted like `<@USER_ID>` or `<@USER_ID|USER_NAME>`)
         match = re.match(r"<@(\w+)(?:\|[^>]+)?>$", user_name)
@@ -273,7 +275,7 @@ class SlackDebugBot(SlackBot):
         else: self.logger = logger
 
         self.max_message_id = 1
-        self.channel_name = "#general"
+        self.channel_name = "general"
         self.bot_user_id = "botty"
 
     def start_loop(self): self.start()
@@ -289,8 +291,8 @@ class SlackDebugBot(SlackBot):
                 time.sleep(0.1) # allow time for the enter keystroke to show up in the terminal
                 incoming_message_queue.put({
                     "type": "message",
-                    "channel": self.channel_name,
-                    "user": "Me",
+                    "channel": "C" + self.channel_name,
+                    "user": "UMe",
                     "text": self.text_to_sendable_text(text),
                     "ts": str(time.time()),
                 })
@@ -314,7 +316,7 @@ class SlackDebugBot(SlackBot):
 
         self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), sendable_text))
         print("\r\033[K" + "{:<12}| Botty: {}".format(self.get_channel_name_by_id(channel_id), sendable_text)) # clear the current line using Erase in Line ANSI escape code
-        print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
+        print("{:<12}| Me: ".format(self.channel_name), end="", flush=True)
 
         message_id = self.max_message_id
         self.max_message_id += 1
@@ -331,8 +333,8 @@ class SlackDebugBot(SlackBot):
         assert isinstance(timestamp, str), "`timestamp` must be a string rather than \"{}\"".format(sendable_text)
         assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
         self.logger.info("adding reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
-        print("\r\033[K" + "{:<12}| Botty reacts with {}".format(self.get_channel_name_by_id(channel_id), emoticon)) # clear the current line using Erase in Line ANSI escape code
-        print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
+        print("\r\033[K" + "{:<12}| Botty reacts with :{}:".format(self.get_channel_name_by_id(channel_id), emoticon)) # clear the current line using Erase in Line ANSI escape code
+        print("{:<12}| Me: ".format(self.channel_name), end="", flush=True)
 
     def unreact(self, channel_id, timestamp, emoticon):
         """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
@@ -345,27 +347,29 @@ class SlackDebugBot(SlackBot):
 
     def get_channel_name_by_id(self, channel_id):
         """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
-        assert isinstance(channel_id, str), "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
-        return channel_id
+        assert isinstance(channel_id, str) and channel_id[0] in {"C", "D"}, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        return channel_id[1:]
 
     def get_channel_id_by_name(self, channel_name):
         """Returns the ID of the channel with name `channel_name`, or `None` if there is no such channel. Channels include public channels, direct messages with other users, and private groups."""
         assert isinstance(channel_name, str), "`channel_name` must be a valid channel name rather than \"{}\"".format(channel_name)
-        return channel_name
+        channel_name = channel_name.strip().lstrip("#")
+        return "C{}".format(channel_name)
 
     def get_user_name_by_id(self, user_id):
         """Returns the username of the user with ID `user_id`."""
-        assert isinstance(user_id, str), "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
-        return user_id
+        assert isinstance(user_id, str) and user_id[0] == "U", "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
+        return user_id[1:]
 
     def get_user_id_by_name(self, user_name):
         """Returns the ID of the user with username `user_name`, or `None` if the ID is invalid."""
         assert isinstance(user_name, str), "`user_name` must be a valid username rather than \"{}\"".format(user_name)
-        return user_name
+        user_name = user_name.strip().lstrip("@")
+        return "U{}".format(user_name)
 
     def get_direct_message_channel_id_by_user_id(self, user_id):
         """Returns the channel ID of the direct message with the user with ID `user_id`, or `None` if the ID is invalid."""
-        return "DM with {}".format(user_id)
+        return "D{}".format(user_id)
 
     def administrator_console(self, namespace):
         """Start an interactive administrator Python console with namespace `namespace`."""
