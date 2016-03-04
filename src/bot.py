@@ -184,7 +184,7 @@ class SlackBot:
         user_name = user_name.strip().lstrip("@")
 
         # check for user reference (these are formatted like `<@USER_ID>` or `<@USER_ID|USER_NAME>`)
-        match = re.match(r"<@(\w+)(?:\|[^>]+)?>$", user_name)
+        match = re.match(r"^<@(\w+)(?:\|[^>]+)?>$", user_name)
         if match: return match.group(1)
 
         # search by user name
@@ -287,7 +287,7 @@ class SlackDebugBot(SlackBot):
         incoming_message_queue = queue.Queue()
         def accept_input():
             while True:
-                text = input("{:<12}| Me: ".format(self.channel_name)) # clear the current line using Erase in Line ANSI escape code
+                text = input("{:<12}| Me: ".format("#" + self.channel_name)) # clear the current line using Erase in Line ANSI escape code
                 time.sleep(0.1) # allow time for the enter keystroke to show up in the terminal
                 incoming_message_queue.put({
                     "type": "message",

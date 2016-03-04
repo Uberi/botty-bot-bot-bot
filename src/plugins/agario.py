@@ -17,16 +17,17 @@ class AgarioPlugin(BasePlugin):
         self.player_locations = {}
         self.player_movement = {}
         self.player_index = {}
+        self.player_split_cooldown = {}
         self.game_map = []
         self.game_channel = None
 
-        self.map_size = 100
+        self.map_size = 150
         self.empty = " "
         self.food = "\u25E6"
 
     def on_step(self):
         current_time = time.time()
-        if current_time - self.last_step_time < 3: return False
+        if current_time - self.last_step_time < 0.2: return False
         self.last_step_time = current_time
 
         if self.game_channel is None: return # no game going on
@@ -42,11 +43,12 @@ class AgarioPlugin(BasePlugin):
         user_name = self.get_user_name_by_id(user)
 
         # game start command
-        match = re.search(r"^\s*pls\s+agar\s+me((?:\s+\w+)*)\s*$", text, re.IGNORECASE)
+        match = re.search(r"^\s*pls\s+agar\s+me((?:\s+\S+)*)\s*$", text, re.IGNORECASE)
         if match:
             players = {user_name}
             for i, player in enumerate(match.group(1).replace(",", " ").split()):
-                player_id = self.get_user_id_by_name(player.strip())
+                player = player.strip(" \t,")
+                player_id = self.get_user_id_by_name(player)
                 if player_id is None:
                     self.respond_raw("who's this {} person".format(player))
                     return True
@@ -76,7 +78,7 @@ class AgarioPlugin(BasePlugin):
             if action == "-": # fire some mass in the desired direction
                 self.fire(user_name, offset * 2)
             elif action == "/":
-                self.split(user_name, offset * 2)
+                self.split(user_name, offset * 4)
             else:
                 self.player_movement[user_name] = offset
             return True
@@ -108,12 +110,14 @@ class AgarioPlugin(BasePlugin):
         self.player_locations = {}
         self.player_movement = {}
         self.player_index = {}
+        self.player_split_cooldown = {}
         current_position = random.randrange(0, 8)
         for i, player in enumerate(players):
             self.player_locations[player] = [[current_position, 1]]
             self.player_movement[player] = 0
             self.player_index[player] = i
-            current_position += random.randrange(5, 10)
+            self.player_split_cooldown[player] = 0
+            current_position = (current_position + random.randrange(10, 30)) % self.map_size
         self.game_map = [self.food if random.random() < 0.3 else self.empty for i in range(self.map_size)]
 
         self.say(
@@ -125,10 +129,26 @@ class AgarioPlugin(BasePlugin):
         )
 
     def step_game(self):
+        # occasionally spawn food in random places
+        if random.random() < 0.3:
+            self.game_map[random.randrange(self.map_size)] = self.food
+
+        # apply joining after splitting
+        for player, locations in self.player_locations.items():
+            if self.player_split_cooldown[player] <= 0 and len(locations) > 1:
+                locations = sorted(locations, key=lambda pair: pair[1])
+                new_locations = []
+                for i in range(0, len(locations) - 1, 2):
+                    (position1, size1), (position2, size2) = locations[i], locations[i + 1]
+                    new_locations.append([position1 if size1 > size2 else position2, size1 + size2])
+                self.player_locations[player] = new_locations
+                self.player_split_cooldown[player] = 20
+            self.player_split_cooldown[player] -= 1
+
         # apply movement
         for player, movement in self.player_movement.items():
             for blob, (position, size) in enumerate(self.player_locations[player]):
-                self.player_locations[player][blob][0] += movement / size
+                self.player_locations[player][blob][0] = (position + movement / size) % self.map_size
 
         # apply food eating
         for player, locations in self.player_locations.items():
@@ -139,12 +159,12 @@ class AgarioPlugin(BasePlugin):
                         self.player_locations[player][blob][1] += 0.25
 
         # apply blobs from different players eating each other
-        for player1, locations1 in self.player_locations.items():
+        pairs = list(self.player_locations.items())
+        for i, (player1, locations1) in enumerate(pairs):
             for blob1, location1 in enumerate(locations1):
                 if location1 is None: continue
                 position1, size1 = location1
-                for player2, locations2 in self.player_locations.items():
-                    if player1 == player2: continue
+                for player2, locations2 in pairs[i + 1:]:
                     for blob2, location2 in enumerate(locations2):
                         if location2 is None: continue
                         position2, size2 = location2
@@ -159,6 +179,7 @@ class AgarioPlugin(BasePlugin):
                                 self.player_locations[player1][blob1][1] += size2
                                 self.player_locations[player2][blob2] = None
 
+        # remove dead player blobs
         new_player_locations = {}
         for player, locations in self.player_locations.items():
             new_locations = [location for location in locations if location is not None]
@@ -183,9 +204,9 @@ class AgarioPlugin(BasePlugin):
                     ): # a blob is colliding with another blob in the same player, nudge it out of the way
                         amount = min((position2 + size2) - (position1 - size1), (position1 + size1) - (position2 - size2))
                         if size1 < size2:
-                            self.player_locations[player][blob1][0] -= amount
+                            self.player_locations[player][blob1][0] = (position1 - amount) % self.map_size
                         else:
-                            self.player_locations[player][blob1][0] += amount
+                            self.player_locations[player][blob2][0] = (position2 + amount) % self.map_size
 
         self.say(self.game_channel, "`{}`".format(self.render_map()))
 
@@ -200,18 +221,24 @@ class AgarioPlugin(BasePlugin):
 
     def split(self, player, offset):
         locations = self.player_locations[player]
+        if offset < 0: offset -= location[1]
+        else: offset += location[1]
         new_locations = []
         for i, location in enumerate(locations):
             if location[1] >= 2: # splitting is possible
-                locations[i][1] /= 2
-                new_locations.append([location[0] + offset, location[1] / 2])
+                new_size = location[1] / 2
+                locations[i][1] = new_size
+                if offset < 0: actual_offset = offset - location[1]
+                else: actual_offset = offset + location[1]
+                new_locations.append([(location[0] + actual_offset) % self.map_size, new_size])
         self.player_locations[player] += new_locations
+        self.player_split_cooldown[player] = 20
 
     def render_map(self):
         result = list(self.game_map)
         for player, locations in self.player_locations.items():
             for position, size in locations:
                 result[round(position - size) % self.map_size] = "("
-                result[round(position) % self.map_size] = str(self.player_index[player] + 1)
+                result[round(position)] = str(self.player_index[player] + 1)
                 result[round(position + size) % self.map_size] = ")"
         return "".join(result)

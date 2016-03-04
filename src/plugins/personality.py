@@ -59,7 +59,7 @@ class PersonalityPlugin(BasePlugin):
                 "say `embiggenify TEXT` if your typing is too quiet\n"
                 "say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding\n"
                 "say `quote me SOMETHING` if you're, like, a professional quote maker or something\n"
-                "say `pls agar me PLAYER1, PLAYER2, ...` if you hate being productive\n"
+                "say `pls agar me PLAYER1, PLAYER2, ...` if you hate being productive (`<`/`>` to move, `<-`/`>-` to fire mass, `</`/`>/` to split)\n"
                 "say `thanks botty`, just because you should"
             ),
             r"(?i)\b(?:thanks|thx|ty)\b.*\bbotty\b": lambda match: self.respond_raw(random.choice(
