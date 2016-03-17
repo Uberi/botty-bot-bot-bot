@@ -65,14 +65,14 @@ class PersonalityPlugin(BasePlugin):
             r"(?i)\b(?:thanks|thx|ty)\b.*\bbotty\b": lambda match: self.respond_raw(random.choice(
                 ["np", "np br0", "no prob", "don't mention it", "anytime"]
             )),
-            r"(?i)^\s*(\?+)\s*$":                    lambda match: self.reply("question"),
-            r"(?i)^\s*(!+)\s*$":                     lambda match: self.reply("exclamation"),
-            r"(?i)\bdrink\s+some\s+water\b":         lambda match: self.reply("water_buffalo"),
-            r"(?i)\bfor\s+the\s+(cd|record)\b":      lambda match: self.reply("record"),
-            r"(?i)\begg":                            lambda match: self.reply("eggplant"),
-            r"(?i)\b(nugget|nugs?|chicken|eat)\b":   lambda match: self.reply("chicken"),
-            r"(?i)\b(sna+kes?|sneks?)\b":            lambda match: self.reply("snake"),
-            r"(?i)\baha\b":                          lambda match: self.reply("aha"),
+            r"(?i)^\s*(\?+)\s*$":               lambda match: self.reply("question"),
+            r"(?i)^\s*(!+)\s*$":                lambda match: self.reply("exclamation"),
+            r"(?i)\bdrink\s+some\s+water\b":    lambda match: self.reply("water_buffalo"),
+            r"(?i)\bfor\s+the\s+(cd|record)\b": lambda match: self.reply("record"),
+            r"(?i)\begg":                       lambda match: self.reply("eggplant"),
+            r"(?i)\b(nugget|nugs?|chicken)\b":  lambda match: self.reply("chicken"),
+            r"(?i)\b(sna+kes?|sneks?)\b":       lambda match: self.reply("snake"),
+            r"(?i)\baha\b":                     lambda match: self.reply("aha"),
         }
 
     def on_message(self, message):
@@ -92,7 +92,7 @@ class PersonalityPlugin(BasePlugin):
                 return True
 
         if random.random() < 0.005:
-            self.reply("lenny")
+            self.reply(random.choice(["lenny", "boredparrot", "pugrun", "chart_with_downwards_trend"]))
 
         # repeat this message if other people have repeated it enough times, 50% of the time
         if self.last_entries[channel][2] >= self.message_repeated_threshold and random.random() < 0.5:

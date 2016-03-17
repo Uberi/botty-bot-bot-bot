@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import os, re, json
+import os, json, re
 import sqlite3
 
 from markov import Markov
 
-SQLITE_DATABASE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "chains.db")
+# generate and print a large number of phrases using Slack history mixed with the KJV bible for amusing quotes
+
 CHAT_HISTORY_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "@history")
 
 def server_text_to_sendable_text(server_text):
@@ -65,14 +66,13 @@ def get_message_text(message):
             return server_text_to_sendable_text(message["message"]["text"])
     return None
 
-connection = sqlite3.connect(SQLITE_DATABASE)
-connection.execute("DROP TABLE IF EXISTS counts")
-connection.execute("DROP TABLE IF EXISTS chain")
-connection.execute("CREATE TABLE counts (key TEXT PRIMARY KEY, count INTEGER)")
-connection.execute("CREATE TABLE chain (key TEXT, next_word TEXT, occurrences INTEGER)")
-connection.execute("CREATE INDEX chain_key_index ON chain (key)")
-
 markov = Markov(2) # Markov model with 2 word look-behind
+
+entries = open("kjv.txt", "r").read().split("\n")
+matcher = re.compile(Markov.WORD_PATTERN, re.IGNORECASE)
+for message in (matcher.findall(m) for m in entries):
+    markov.train([m.lower() for m in message], 3)
+
 for channel_name, history_file in get_history_files().items():
     with open(history_file, "r") as f:
         for entry in f:
@@ -80,15 +80,5 @@ for channel_name, history_file in get_history_files().items():
             if text is not None:
                 markov.train(Markov.tokenize_text(sendable_text_to_text(text)))
 
-connection.executemany(
-    "INSERT INTO counts VALUES (?, ?)",
-    (("\n".join(key), occurrences) for key, occurrences in markov.counts.items())
-)
-connection.executemany(
-    "INSERT INTO chain VALUES (?, ?, ?)",
-    (("\n".join(key), next_word, occurrences) for key, next_mapping in markov.chain.items()
-                                   for next_word, occurrences in next_mapping.items())
-)
-
-connection.commit()
-connection.close()
+for x in range(10000):
+    print(Markov.format_words(markov.speak()))
