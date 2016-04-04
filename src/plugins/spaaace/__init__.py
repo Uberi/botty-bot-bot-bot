@@ -27,10 +27,6 @@ class SpaaacePlugin(BasePlugin):
             credentials = json.load(f)
             self.imgur_client = ImgurClient(credentials["client_id"], credentials["client_secret"])
 
-    def upload(self, file_value, channels):
-        result = json.loads(self.client.api_call("files.upload", post_data = {"file": file_value}, channels = ",".join(channels)).decode("utf-8"))
-        print(result)
-
     def on_message(self, message):
         text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
         if text is None or channel is None or user is None: return False

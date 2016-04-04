@@ -58,7 +58,7 @@ class SlackBot:
         self.logger.info("connected to Slack realtime messaging API")
 
         # obtain the bot credentials
-        authentication = json.loads(self.client.api_call("auth.test").decode("utf-8"))
+        authentication = self.client.api_call("auth.test")
         assert authentication["ok"], "Could not authenticate with Slack API"
         self.bot_user_id = authentication["user_id"]
 
@@ -100,6 +100,8 @@ class SlackBot:
         self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), sendable_text))
 
         # the correct method to use here is `rtm_send_message`, but it's technically broken since it doesn't send the message ID so we're going to do this properly ourselves
+        # the message ID allows us to correlate messages with message responses, letting us ensure that messages are actually delivered properly
+        # see the "Sending messages" heading at https://api.slack.com/rtm for more details
         message_id = self.max_message_id
         self.max_message_id += 1
         self.client.server.send_to_websocket({
@@ -136,7 +138,8 @@ class SlackBot:
         assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
         emoticon = emoticon.strip(":")
         self.logger.info("adding reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
-        self.client.api_call("reactions.add", name=emoticon, channel=channel_id, timestamp=timestamp)
+        response = self.client.api_call("reactions.add", name=emoticon, channel=channel_id, timestamp=timestamp)
+        assert "ok" in response and response["ok"], "Reaction addition failed"
 
     def unreact(self, channel_id, timestamp, emoticon):
         """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
@@ -145,7 +148,8 @@ class SlackBot:
         assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
         emoticon = emoticon.strip(":")
         self.logger.info("removing reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
-        self.client.api_call("reactions.remove", name=emoticon, channel=channel_id, timestamp=timestamp)
+        response = self.client.api_call("reactions.remove", name=emoticon, channel=channel_id, timestamp=timestamp)
+        assert "ok" in response and response["ok"], "Reaction removal failed"
 
     def get_channel_name_by_id(self, channel_id):
         """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
@@ -199,7 +203,7 @@ class SlackBot:
 
     def get_direct_message_channel_id_by_user_id(self, user_id):
         """Returns the channel ID of the direct message with the user with ID `user_id`, or `None` if the ID is invalid."""
-        listing = json.loads(self.client.api_call("im.list").decode("utf-8"))["ims"]
+        listing = self.client.api_call("im.list")["ims"]
         for entry in listing:
             if entry["user"] == user_id: return entry["id"]
         return None
