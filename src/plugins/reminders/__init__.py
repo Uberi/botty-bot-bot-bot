@@ -118,7 +118,7 @@ class RemindersPlugin(BasePlugin):
 
             if isinstance(rrule_or_datetime, datetime): # single occurrence reminder
                 self.reminders.append([rrule_or_datetime, None, target, description])
-                self.respond("{}'s reminder for \"{}\" set at {}".format(target_name, description, self.text_to_sendable_text(str(rrule_or_datetime))))
+                self.say(target, "{}'s reminder for \"{}\" set at {}".format(target_name, description, self.text_to_sendable_text(str(rrule_or_datetime))))
             else: # repeating reminder
                 rrule = dateutil.rrule.rrulestr(rrule_or_datetime)
                 next_occurrence = rrule.after(datetime.now())
