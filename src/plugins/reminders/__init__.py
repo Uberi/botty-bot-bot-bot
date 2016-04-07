@@ -84,6 +84,7 @@ class RemindersPlugin(BasePlugin):
     def on_message(self, message):
         text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
         if text is None or channel is None or user is None: return False
+        user_name = self.get_user_name_by_id(user)
 
         # reminder setting command
         match = re.search(r"^\s*\bbotty[\s,\.]+remind\s+(\S+)\s+(.*?):\s+(.*)", text, re.IGNORECASE)
@@ -118,7 +119,7 @@ class RemindersPlugin(BasePlugin):
 
             if isinstance(rrule_or_datetime, datetime): # single occurrence reminder
                 self.reminders.append([rrule_or_datetime, None, target, description])
-                self.say(target, "{}'s reminder for \"{}\" set at {}".format(target_name, description, self.text_to_sendable_text(str(rrule_or_datetime))))
+                self.say(target, "{}'s reminder for \"{}\" set at {}".format(user_name, description, self.text_to_sendable_text(str(rrule_or_datetime))))
             else: # repeating reminder
                 rrule = dateutil.rrule.rrulestr(rrule_or_datetime)
                 next_occurrence = rrule.after(datetime.now())
@@ -126,7 +127,7 @@ class RemindersPlugin(BasePlugin):
                     self.respond("\"{}\" will never trigger, rrule is {}".format(occurrences, self.text_to_sendable_text(rrule_or_datetime)))
                     return True
                 self.reminders.append([next_occurrence, rrule_or_datetime, target, description])
-                self.respond("{}'s recurring reminder for \"{}\" set, next reminder is at {}".format(user, description, self.text_to_sendable_text(str(next_occurrence))))
+                self.say(target, "{}'s recurring reminder for \"{}\" set, next reminder is at {}".format(user_name, description, self.text_to_sendable_text(str(next_occurrence))))
             self.save_reminders(self.reminders)
             return True
 
