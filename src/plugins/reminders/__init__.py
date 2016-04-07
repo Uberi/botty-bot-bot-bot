@@ -126,7 +126,7 @@ class RemindersPlugin(BasePlugin):
                     self.respond("\"{}\" will never trigger, rrule is {}".format(occurrences, self.text_to_sendable_text(rrule_or_datetime)))
                     return True
                 self.reminders.append([next_occurrence, rrule_or_datetime, target, description])
-                self.respond("{}'s recurring reminder for \"{}\" set, next reminder is at {}".format(target_name, description, self.text_to_sendable_text(str(next_occurrence))))
+                self.respond("{}'s recurring reminder for \"{}\" set, next reminder is at {}".format(user, description, self.text_to_sendable_text(str(next_occurrence))))
             self.save_reminders(self.reminders)
             return True
 
