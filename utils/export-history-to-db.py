@@ -71,7 +71,7 @@ def message_values(history_lines):
         text = get_message_text(message)
         if text is not None:
             timestamp, timestamp_order = message["ts"].split(".")
-            yield (timestamp, timestamp_order, message["user"], channel_id, text)
+            yield (timestamp, timestamp_order, channel_id, message["user"], text)
 for channel_name, history_file in get_history_files().items():
     if channel_name not in channel_name_id: continue
     channel_id = channel_name_id[channel_name]

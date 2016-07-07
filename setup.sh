@@ -2,21 +2,20 @@
 
 sudo apt-get install python3-pip
 
-# we have to install from the GitHub repo for now since the PyPI version is Python 2 only
-#sudo pip3 install slackclient
-sudo pip3 install slackclient
+# modules used by bot
+pip3 install slackclient
 
 # modules used by plugins
-sudo apt-get install python3-dateutil
-sudo pip3 install requests
-sudo pip3 install recurrent
-sudo pip3 install wikipedia
-sudo pip3 install sympy
-sudo pip3 install pyfiglet
-sudo pip3 install google-api-python-client
-sudo apt-get install python3-pillow
-sudo pip3 install imgurpython
+pip3 install python-dateutil
+pip3 install requests
+pip3 install recurrent
+pip3 install wikipedia
+pip3 install sympy
+pip3 install pyfiglet
+pip3 install google-api-python-client
+pip3 install pillow
+pip3 install imgurpython
 
 # modules used by web interface
-sudo pip3 install flask
-sudo pip3 install flask-sqlalchemy
+pip3 install flask
+pip3 install flask-sqlalchemy

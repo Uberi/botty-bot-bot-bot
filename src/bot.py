@@ -312,6 +312,7 @@ class SlackDebugBot(SlackBot):
                     incoming_message_queue.task_done()
                 time.sleep(0.01)
         except KeyboardInterrupt: pass
+        except EOFError: pass
 
     def say(self, channel_id, sendable_text):
         """Say `sendable_text` in the channel with ID `channel_id`, returning the message ID (unique within each `SlackBot` instance)."""

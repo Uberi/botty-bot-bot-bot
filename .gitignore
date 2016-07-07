@@ -3,6 +3,7 @@
 *-custom.*
 *.db
 src/plugins/spaaace/generated_image.jpg
+download-history.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
