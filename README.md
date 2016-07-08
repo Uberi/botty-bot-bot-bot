@@ -232,7 +232,7 @@ If previously downloaded history is present, the new history will be transparent
 License
 -------
 
-Copyright 2015 [Anthony Zhang (Uberi)](https://uberi.github.io).
+Copyright 2015-2016 [Anthony Zhang (Uberi)](https://uberi.github.io).
 
 The source code is available online at [GitHub](https://github.com/Uberi/botty-bot-bot-bot).
 
