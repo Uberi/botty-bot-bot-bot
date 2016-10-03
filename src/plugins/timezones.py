@@ -61,7 +61,7 @@ class TimezonesPlugin(BasePlugin):
     def on_message(self, message):
         text, user = self.get_message_text(message), self.get_message_sender(message)
         if text is None or user is None: return False
-        match = re.search(r"\b(\d\d?)(?::(\d\d))?\s*(am|pm)?(?:\s+(\w+))?", text, re.IGNORECASE)
+        match = re.search(r"\b(\d\d?)(?::(\d\d))?(?:\s*(am|pm))?(?:\s+(\w+))?", text, re.IGNORECASE)
         if not match: return False
 
         # get time of day
@@ -69,7 +69,7 @@ class TimezonesPlugin(BasePlugin):
         hour = int(match.group(1))
         minute = 0 if match.group(2) is None else int(match.group(2))
         if not (0 <= hour <= 23) or not (0 <= minute <= 59): return False
-        if match.group(3) == "pm":
+        if match.group(3) is not None and match.group(3).lower() == "pm":
             if not (1 <= hour <= 12): return False
             hour = (hour % 12) + 12
         today = date.today()
@@ -80,7 +80,7 @@ class TimezonesPlugin(BasePlugin):
         if timezone_name in timezone_abbreviations: # use the specified timezone
             timezone = timezone_abbreviations[timezone_name.lower()]
             timezone_is_from_user_info = False
-        elif timezone_name.lower() in {"local", "here"}: # use the user's local timezone, specified in their profile
+        elif timezone_name is not None and timezone_name.lower() in {"local", "here"}: # use the user's local timezone, specified in their profile
             user_info = self.get_user_info_by_id(user)
             try:
                 timezone = pytz.timezone(user_info.get("tz"))
