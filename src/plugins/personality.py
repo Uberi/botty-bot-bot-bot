@@ -56,13 +56,12 @@ class PersonalityPlugin(BasePlugin):
                 "say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously\n"
                 "say `sup botty` if you're wondering where the haps are\n"
                 "say `yo botty` to receive some :fire: lines"
-                "say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders\n"
-                "say `botty unremind DESCRIPTION` if you don't\n"
                 "say `embiggenify TEXT` if your typing is too quiet\n"
                 "say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding\n"
                 "say `quote me SOMETHING` if you're, like, a professional quote maker or something\n"
                 "say `pls agar me PLAYER1, PLAYER2, ...` if you hate being productive (`<`/`>` to move, `<-`/`>-` to fire mass, `</`/`>/` to split)\n"
                 "say `thanks botty`, just because you should"
+                "plus a bunch of other secret ~bugs~ undocumented features to discover"
             ),
             r"(?i)\b(?:thanks|thx|ty)\b.*\bbotty\b": lambda match: self.respond_raw(random.choice(
                 ["np", "np br0", "no prob", "don't mention it", "anytime"]
@@ -70,7 +69,7 @@ class PersonalityPlugin(BasePlugin):
             r"(?i)^\s*(\?+)\s*$":               lambda match: self.reply("question"),
             r"(?i)^\s*(!+)\s*$":                lambda match: self.reply("exclamation"),
             r"(?i)\bdrink\s+some\s+water\b":    lambda match: self.reply("water_buffalo"),
-            r"(?i)\bfor\s+the\s+(cd|record)\b": lambda match: self.reply("record"),
+            r"(?i)\bfor\s+the\s+(cd|record)\b": lambda match: self.reply("cd"),
             r"(?i)\begg":                       lambda match: self.reply("eggplant"),
             r"(?i)\b(nugget|nugs?|chicken)\b":  lambda match: self.reply("chicken"),
             r"(?i)\b(sna+kes?|sneks?)\b":       lambda match: self.reply("snake"),

@@ -87,6 +87,7 @@ class BasePlugin:
     def get_user_id_by_name(self, user_name): return self.bot.get_user_id_by_name(user_name)
     def get_user_name_by_id(self, user_id): return self.bot.get_user_name_by_id(user_id)
     def get_direct_message_channel_id_by_user_id(self, user_id): return self.bot.get_direct_message_channel_id_by_user_id(user_id)
+    def get_user_info_by_id(self, user_id): return self.bot.get_user_info_by_id(user_id)
     def text_to_sendable_text(self, text): return self.bot.text_to_sendable_text(text)
     def sendable_text_to_text(self, sendable_text): return self.bot.sendable_text_to_text(sendable_text)
     def get_bot_user_id(self): return self.bot.bot_user_id

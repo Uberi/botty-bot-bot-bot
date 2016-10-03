@@ -64,13 +64,14 @@ Plugins inherit a number of methods from the `BasePlugin` class:
     * If this is called within an `on_message(message)` handler, the reaction will be to `message`.
 * `unreply(emoticon)` - unreact with `emoticon` to the most recently received message.
     * If this is called within an `on_message(message)` handler, the reaction will be to `message`.
-* `self.get_channel_name_by_id(channel_id)` - returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid.
+* `self.get_channel_name_by_id(channel_id)` - returns the name of the channel with ID `channel_id`, or `None` if there are no channels with that ID. Channels include public channels, direct messages with other users, and private groups.
     * Channels include public channels, direct messages with other users, and private groups.
-* `self.get_channel_id_by_name(channel_name)` - returns the ID of the channel with name `channel_name`, or `None` if there is no such channel.
+* `self.get_channel_id_by_name(channel_name)` - returns the ID of the channel with name `channel_name`, or `None` if there are no channels with that name. Channels include public channels, direct messages with other users, and private groups.
     * Channels include public channels, direct messages with other users, and private groups.
-* `self.get_user_name_by_id(user_id)` - returns the username of the user with ID `user_id`.
-* `self.get_user_id_by_name(user_id)` - returns the ID of the user with username `user_name`, or `None` if the ID is invalid.
+* `self.get_user_name_by_id(user_id)` - returns the username of the user with ID `user_id`, or `None` if there are no users with that ID.
+* `self.get_user_id_by_name(user_id)` - returns the ID of the user with username `user_name`, or `None` if there are no users with that username.
 * `self.get_direct_message_channel_id_by_user_id(user_id)` - returns the channel ID of the direct message with the user with ID `user_id`, or `None` if the ID is invalid.
+* `self.get_user_info_by_id(user_id)` - returns a [metadata dictionary](https://api.slack.com/types/user) about the user with ID `user_id`.
 * `self.text_to_sendable_text(text)` - returns `text`, a plain text string, converted into sendable text.
 * `self.sendable_text_to_text(sendable_text)` - returns `sendable_text`, a sendable text string, converted into plain text.
     * The transformation can lose some information for escape sequences, such as link labels.

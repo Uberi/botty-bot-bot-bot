@@ -107,11 +107,11 @@ botty = Botty(SLACK_TOKEN)
 from plugins.arithmetic import ArithmeticPlugin
 botty.register_plugin(ArithmeticPlugin(botty))
 
+from plugins.timezones import TimezonesPlugin
+botty.register_plugin(TimezonesPlugin(botty))
+
 from plugins.poll import PollPlugin
 botty.register_plugin(PollPlugin(botty))
-
-from plugins.reminders import RemindersPlugin
-botty.register_plugin(RemindersPlugin(botty))
 
 from plugins.wiki import WikiPlugin
 botty.register_plugin(WikiPlugin(botty))

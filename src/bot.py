@@ -9,6 +9,11 @@ from collections import deque
 from slackclient import SlackClient
 
 class SlackBot:
+    """
+    Slack bot base class. Includes lots of useful functionality that bots often require, such as messaging, connection management, and interfacing with APIs.
+
+    This class is intended to be subclassed, with the `on_step` and `on_message` methods overridden to do more useful things.
+    """
     def __init__(self, token, logger=None):
         assert isinstance(token, str), "`token` must be a valid Slack API token"
         assert logger is None or not isinstance(logger, logging.Logger), "`logger` must be `None` or a logging function"
@@ -139,7 +144,7 @@ class SlackBot:
         emoticon = emoticon.strip(":")
         self.logger.info("adding reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
         response = self.client.api_call("reactions.add", name=emoticon, channel=channel_id, timestamp=timestamp)
-        assert "ok" in response and response["ok"], "Reaction addition failed"
+        assert response.get("ok"), "Reaction addition failed: error {}".format(response.get("error"))
 
     def unreact(self, channel_id, timestamp, emoticon):
         """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
@@ -149,17 +154,17 @@ class SlackBot:
         emoticon = emoticon.strip(":")
         self.logger.info("removing reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
         response = self.client.api_call("reactions.remove", name=emoticon, channel=channel_id, timestamp=timestamp)
-        assert "ok" in response and response["ok"], "Reaction removal failed"
+        assert response.get("ok"), "Reaction removal failed: error {}".format(response.get("error"))
 
     def get_channel_name_by_id(self, channel_id):
-        """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
+        """Returns the name of the channel with ID `channel_id`, or `None` if there are no channels with that ID. Channels include public channels, direct messages with other users, and private groups."""
         assert isinstance(channel_id, str), "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         for entry in self.client.server.channels:
             if entry.id == channel_id: return entry.name
         return None
 
     def get_channel_id_by_name(self, channel_name):
-        """Returns the ID of the channel with name `channel_name`, or `None` if there is no such channel. Channels include public channels, direct messages with other users, and private groups."""
+        """Returns the ID of the channel with name `channel_name`, or `None` if there are no channels with that name. Channels include public channels, direct messages with other users, and private groups."""
         assert isinstance(channel_name, str), "`channel_name` must be a valid channel name rather than \"{}\"".format(channel_name)
 
         channel_name = channel_name.strip().lstrip("#")
@@ -175,14 +180,14 @@ class SlackBot:
         return None
 
     def get_user_name_by_id(self, user_id):
-        """Returns the username of the user with ID `user_id`."""
+        """Returns the username of the user with ID `user_id`, or `None` if there are no users with that ID."""
         assert isinstance(user_id, str), "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
         for entry in self.client.server.users:
             if entry.id == user_id: return entry.name
         return None
 
     def get_user_id_by_name(self, user_name):
-        """Returns the ID of the user with username `user_name`, or `None` if the ID is invalid."""
+        """Returns the ID of the user with username `user_name`, or `None` if there are no users with that username."""
         assert isinstance(user_name, str), "`user_name` must be a valid username rather than \"{}\"".format(user_name)
 
         user_name = user_name.strip().lstrip("@")
@@ -208,6 +213,15 @@ class SlackBot:
             if entry["user"] == user_id: return entry["id"]
         return None
 
+    def get_user_info_by_id(self, user_id):
+        """Returns a [metadata dictionary](https://api.slack.com/types/user) about the user with ID `user_id`."""
+        assert self.get_user_name_by_id(user_id) is not None, "`user_id` must exist and be a valid user ID rather than \"{}\"".format(user_id)
+        self.logger.info("retrieving user info for user {}".format(self.get_user_name_by_id(user_id)))
+        response = self.client.api_call("users.info", user=user_id)
+        assert response.get("ok"), "User info request failed: error {}".format(response.get("error"))
+        assert isinstance(response.get("user"), dict) and "id" in response["user"], "User info response malformed: {}".format(response.get("user"))
+        return response["user"]
+
     def server_text_to_sendable_text(self, server_text):
         """Returns `server_text`, a string in Slack server message format, converted into a string in Slack sendable message format."""
         assert isinstance(server_text, str), "`server_text` must be a string rather than \"{}\"".format(server_text)
@@ -217,8 +231,8 @@ class SlackBot:
         # process link references
         def process_special_sequence(match):
             original, body = match.group(0), match.group(1).split("|")[0]
-            if body.startswith("#C"): return original # channel reference, should send unchanged
-            if body.startswith("@U"): return original # user reference, should send unchanged
+            if body.startswith("#"): return original # channel reference, should send unchanged
+            if body.startswith("@"): return original # user reference, should send unchanged
             if body.startswith("!"): return original # special command, should send unchanged
             return body # link, should remove angle brackets and label in order to allow it to linkify
         return re.sub(r"<(.*?)>", process_special_sequence, server_text)
@@ -237,11 +251,11 @@ class SlackBot:
         # process link references
         def process_special_sequence(match):
             original, body = match.group(0), match.group(1).split("|")[0]
-            if body.startswith("#C"): # channel reference
+            if body.startswith("#"): # channel reference
                 channel_name = self.get_channel_name_by_id(body[1:])
                 if channel_name is None: return ""
                 return "#" + channel_name
-            if body.startswith("@U"): # user reference
+            if body.startswith("@"): # user reference
                 user_name = self.get_user_name_by_id(body[1:])
                 if user_name is None: return ""
                 return "@" + user_name
@@ -271,6 +285,11 @@ class SlackBot:
         console_thread.start()
 
 class SlackDebugBot(SlackBot):
+    """
+    Slack debug bot - when started, exposes a command line interface for testing and debugging your Slack bot.
+
+    This class is designed to emulate the functionality of the `SlackBot` class as closely as possible. For method documentation, refer to the corresponding methods in the `SlackBot` class.
+    """
     def __init__(self, token, logger=None):
         assert isinstance(token, str), "`token` must be a valid Slack API token"
         assert logger is None or not isinstance(logger, logging.Logger), "`logger` must be `None` or a logging function"
@@ -291,15 +310,19 @@ class SlackDebugBot(SlackBot):
         incoming_message_queue = queue.Queue()
         def accept_input():
             while True:
-                text = input("{:<12}| Me: ".format("#" + self.channel_name)) # clear the current line using Erase in Line ANSI escape code
-                time.sleep(0.1) # allow time for the enter keystroke to show up in the terminal
-                incoming_message_queue.put({
-                    "type": "message",
-                    "channel": "C" + self.channel_name,
-                    "user": "UMe",
-                    "text": self.text_to_sendable_text(text),
-                    "ts": str(time.time()),
-                })
+                try:
+                    text = input("{:<12}| Me: ".format("#" + self.channel_name)) # clear the current line using Erase in Line ANSI escape code
+                except EOFError:
+                    incoming_message_queue.put(None)
+                else:
+                    time.sleep(0.1) # allow time for the enter keystroke to show up in the terminal
+                    incoming_message_queue.put({
+                        "type": "message",
+                        "channel": "C" + self.channel_name,
+                        "user": "UMe",
+                        "text": self.text_to_sendable_text(text),
+                        "ts": str(time.time()),
+                    })
         input_thread = threading.Thread(target=accept_input)
         input_thread.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
         input_thread.start()
@@ -308,14 +331,14 @@ class SlackDebugBot(SlackBot):
             while True:
                 self.on_step()
                 while not incoming_message_queue.empty():
-                    self.on_message(incoming_message_queue.get())
+                    incoming_message = incoming_message_queue.get()
+                    if incoming_message is None: raise KeyboardInterrupt # end of user input
+                    self.on_message(incoming_message)
                     incoming_message_queue.task_done()
                 time.sleep(0.01)
         except KeyboardInterrupt: pass
-        except EOFError: pass
 
     def say(self, channel_id, sendable_text):
-        """Say `sendable_text` in the channel with ID `channel_id`, returning the message ID (unique within each `SlackBot` instance)."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         assert isinstance(sendable_text, str), "`sendable_text` must be a string rather than \"{}\"".format(sendable_text)
 
@@ -328,12 +351,10 @@ class SlackDebugBot(SlackBot):
         return message_id
 
     def say_complete(self, channel_id, sendable_text):
-        """Say `sendable_text` in the channel with ID `channel_id`, waiting for the message to finish sending (raising a `TimeoutError` if this takes more than `timeout` seconds), returning the message timestamp."""
         self.say(channel_id, sendable_text)
         return time.time()
 
     def react(self, channel_id, timestamp, emoticon):
-        """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         assert isinstance(timestamp, str), "`timestamp` must be a string rather than \"{}\"".format(sendable_text)
         assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
@@ -342,7 +363,6 @@ class SlackDebugBot(SlackBot):
         print("{:<12}| Me: ".format(self.channel_name), end="", flush=True)
 
     def unreact(self, channel_id, timestamp, emoticon):
-        """React with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`."""
         assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         assert isinstance(timestamp, str), "`timestamp` must be a string rather than \"{}\"".format(sendable_text)
         assert isinstance(emoticon, str), "`emoticon` must be a string rather than \"{}\"".format(sendable_text)
@@ -351,31 +371,36 @@ class SlackDebugBot(SlackBot):
         print("{:<12}| Me: ".format(self.channel_name), end = "", flush=True)
 
     def get_channel_name_by_id(self, channel_id):
-        """Returns the name of the channel with ID `channel_id`, or `None` if the ID is invalid. Channels include public channels, direct messages with other users, and private groups."""
-        assert isinstance(channel_id, str) and channel_id[0] in {"C", "D"}, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        assert isinstance(channel_id, str), "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
         return channel_id[1:]
 
     def get_channel_id_by_name(self, channel_name):
-        """Returns the ID of the channel with name `channel_name`, or `None` if there is no such channel. Channels include public channels, direct messages with other users, and private groups."""
         assert isinstance(channel_name, str), "`channel_name` must be a valid channel name rather than \"{}\"".format(channel_name)
         channel_name = channel_name.strip().lstrip("#")
         return "C{}".format(channel_name)
 
     def get_user_name_by_id(self, user_id):
-        """Returns the username of the user with ID `user_id`."""
-        assert isinstance(user_id, str) and user_id[0] == "U", "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
+        assert isinstance(user_id, str), "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
         return user_id[1:]
 
     def get_user_id_by_name(self, user_name):
-        """Returns the ID of the user with username `user_name`, or `None` if the ID is invalid."""
         assert isinstance(user_name, str), "`user_name` must be a valid username rather than \"{}\"".format(user_name)
         user_name = user_name.strip().lstrip("@")
         return "U{}".format(user_name)
 
     def get_direct_message_channel_id_by_user_id(self, user_id):
-        """Returns the channel ID of the direct message with the user with ID `user_id`, or `None` if the ID is invalid."""
         return "D{}".format(user_id)
 
+    def get_user_info_by_id(self, user_id):
+        assert isinstance(user_id, str), "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
+        return {
+            "color": "ff0000",
+            "id": "UMe", "name": "Me",
+            "deleted": False, "is_admin": False, "is_bot": False, "is_owner": False, "is_primary_owner": False, "is_restricted": False, "is_ultra_restricted": False,
+            "profile": {"email": "me@example.com", "first_name": "Some", "last_name": "Body", "real_name": "Some Body"},
+            "real_name": "Some Body",
+            "tz": "Canada/Eastern", "tz_label": "Eastern Daylight Time", "tz_offset": -25200,
+        }
+
     def administrator_console(self, namespace):
-        """Start an interactive administrator Python console with namespace `namespace`."""
         raise NotImplementedError("The administrator console is not supported in the debug Slack bot.")

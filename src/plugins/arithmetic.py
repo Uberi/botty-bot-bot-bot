@@ -32,7 +32,7 @@ class ArithmeticPlugin(BasePlugin):
     """
     Symbolic mathematics plugin for Botty.
 
-    This uses Sympy for computation and implements evaluation timeouts by spawning a child process and monitoring it.
+    This uses Sympy for computation and implements evaluation timeouts by spawning a child process and killing it if it takes too much time.
 
     Example invocations:
 
