@@ -104,7 +104,7 @@ class TimezonesPlugin(BasePlugin):
                 timezone_conversions.append("*{}* :{}: {}:{:>02}".format(other_timezone_name.upper(), clockify(converted_timestamp), converted_timestamp.hour, converted_timestamp.minute))
 
         if timezone_is_from_user_info:
-            selected_time = "*{}* ({}'s local time) :{}: {}:{:>02}".format(timezone_name.upper(), self.untag_word(self.get_user_name_by_id(user)), clockify(timestamp), timestamp.hour, timestamp.minute)
+            selected_time = "*{}*'s local time :{}: {}:{:>02}".format(timezone_name.upper(), self.untag_word(self.get_user_name_by_id(user)), clockify(timestamp), timestamp.hour, timestamp.minute)
         else:
             selected_time = "*{}* :{}: {}:{:>02}".format(timezone_name.upper(), clockify(timestamp), timestamp.hour, timestamp.minute)
 

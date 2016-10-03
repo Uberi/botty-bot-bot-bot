@@ -89,8 +89,11 @@ class PersonalityPlugin(BasePlugin):
         for pattern, action in self.simple_pattern_actions.items():
             match = re.search(pattern, text)
             if match:
-                action(match)
-                return True
+                try:
+                    action(match)
+                    return True
+                except: # simple responses shouldn't be able to crash us
+                    pass
 
         if random.random() < 0.005:
             self.reply(random.choice(["lenny", "boredparrot", "pugrun", "chart_with_downwards_trend"]))
