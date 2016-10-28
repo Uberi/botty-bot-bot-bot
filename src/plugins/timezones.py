@@ -46,14 +46,14 @@ class TimezonesPlugin(BasePlugin):
 
     Example invocations:
 
-        general     | Me: 4pm local
-        general     | Botty: *EASTERN DAYLIGHT TIME* (Μe's local time) :clock4: 16:00 :point_right: *TORONTO* :clock4: 16:00 - *VANCOUVER* :clock1: 13:00 - *UTC* :clock8: 20:00
-        general     | Me: 6:23pm pst
-        general     | Botty: *PST* :clock630: 18:23 :point_right: *TORONTO* :clock930: 21:23 - *VANCOUVER* :clock630: 18:23 - *UTC* :clock130: 1:23 (tomorrow)
-        general     | Me: 6:23 here
-        general     | Botty: *EASTERN DAYLIGHT TIME* (Μe's local time) :clock630: 6:23 :point_right: *TORONTO* :clock630: 6:23 - *VANCOUVER* :clock330: 3:23 - *UTC* :clock1030: 10:23
-        general     | Me: 8pm toronto
-        general     | Botty: *TORONTO* :clock8: 20:00 :point_right: *TORONTO* :clock8: 20:00 - *VANCOUVER* :clock5: 17:00 - *UTC* :clock12: 0:00 (tomorrow)
+        #general    | Me: 4pm local
+        #general    | Botty: *EASTERN DAYLIGHT TIME* (Μe's local time) :clock4: 16:00 :point_right: *TORONTO* :clock4: 16:00 - *VANCOUVER* :clock1: 13:00 - *UTC* :clock8: 20:00
+        #general    | Me: 6:23pm pst
+        #general    | Botty: *PST* :clock630: 18:23 :point_right: *TORONTO* :clock930: 21:23 - *VANCOUVER* :clock630: 18:23 - *UTC* :clock130: 1:23 (tomorrow)
+        #general    | Me: 6:23 here
+        #general    | Botty: *EASTERN DAYLIGHT TIME* (Μe's local time) :clock630: 6:23 :point_right: *TORONTO* :clock630: 6:23 - *VANCOUVER* :clock330: 3:23 - *UTC* :clock1030: 10:23
+        #general    | Me: 8pm toronto
+        #general    | Botty: *TORONTO* :clock8: 20:00 :point_right: *TORONTO* :clock8: 20:00 - *VANCOUVER* :clock5: 17:00 - *UTC* :clock12: 0:00 (tomorrow)
     """
     def __init__(self, bot):
         super().__init__(bot)
@@ -61,7 +61,7 @@ class TimezonesPlugin(BasePlugin):
     def on_message(self, message):
         text, user = self.get_message_text(message), self.get_message_sender(message)
         if text is None or user is None: return False
-        match = re.search(r"\b(\d\d?)(?::(\d\d))?(?:\s*(am|pm))?(?:\s+(\w+))?", text, re.IGNORECASE)
+        match = re.search(r"\b(\d\d?)(?::(\d\d))?(?:\s*(am|pm))?\s+(\w+)", text, re.IGNORECASE)
         if not match: return False
 
         # get time of day
@@ -77,10 +77,10 @@ class TimezonesPlugin(BasePlugin):
 
         # get timezone and localized timestamp
         timezone_name = match.group(4)
-        if timezone_name in timezone_abbreviations: # use the specified timezone
+        if timezone_name.lower() in timezone_abbreviations: # use the specified timezone
             timezone = timezone_abbreviations[timezone_name.lower()]
             timezone_is_from_user_info = False
-        elif timezone_name is not None and timezone_name.lower() in {"local", "here"}: # use the user's local timezone, specified in their profile
+        elif timezone_name.lower() in {"local", "here"}: # use the user's local timezone, specified in their profile
             user_info = self.get_user_info_by_id(user)
             try:
                 timezone = pytz.timezone(user_info.get("tz"))
