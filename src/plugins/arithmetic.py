@@ -10,7 +10,7 @@ from sympy.parsing.sympy_parser import parse_expr, standard_transformations, imp
 from sympy.parsing.sympy_tokenize import TokenError
 from sympy.physics import units
 
-#from .utilities import BasePlugin
+from .utilities import BasePlugin
 
 ALLOWED_TOKENS = {
     token.ENDMARKER,  token.NAME,      token.NUMBER,     token.STRING,       token.LPAR,
@@ -77,6 +77,8 @@ class ArithmeticPlugin(BasePlugin):
         #general    | Botty: sqrt(20) :point_right: 2*sqrt(5) :point_right: 4.4721359549995793928183473374625524708812367192230514485417944908210418512756098
         #general    | Me: calculate integrate(1/x, x)
         #general    | Botty: integrate(1/x, x) :point_right: log(x)
+        #general    | Me: calculate 1kg meter/second**2 + 2 newtons
+        #general    | Botty: 1kg meter/second**2 + 2 newtons :point_right: 3*kg*m/s**2
         #general    | Me: eval solve(Eq(x**2, 6), x)
         #general    | Botty: solve(Eq(x**2, 6), x) :point_right: [-sqrt(6), sqrt(6)]
     """
@@ -110,5 +112,5 @@ class ArithmeticPlugin(BasePlugin):
 
 if __name__ == "__main__":
     print(evaluate_with_time_limit("integrate(1/x, x)"))
-    print(evaluate_with_time_limit("expand((x + 1)**4)"))
     print(evaluate_with_time_limit("1+/a"))
+    print(evaluate_with_time_limit("1kg meter/second**2 + 2 newtons"))
