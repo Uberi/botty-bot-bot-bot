@@ -22,6 +22,7 @@ DEBUG = len(sys.argv) < 2
 if DEBUG:
     from bot import SlackDebugBot as SlackBot
     SLACK_TOKEN = ""
+    print("No Slack API token specified in command line arguments; starting in local debug mode...")
 else:
     SLACK_TOKEN = sys.argv[1]
 
@@ -31,7 +32,7 @@ class Botty(SlackBot):
         self.plugins = []
         self.last_message_channel_id = None
         self.last_message_timestamp = None
-        self.recent_events = deque(maxlen=300) # store the last 300 events
+        self.recent_events = deque(maxlen=2000) # store the last 2000 events
 
     def register_plugin(self, plugin_instance):
         self.plugins.append(plugin_instance)
@@ -48,7 +49,7 @@ class Botty(SlackBot):
         if channel: self.last_message_channel_id = channel
 
         # save recent message events
-        if message.get("type") not in ("ping", "pong"):
+        if message.get("type") not in {"ping", "pong", "presence_change", "user_typing", "reconnect_url"}:
             self.recent_events.append(message)
 
         for plugin in self.plugins:
@@ -145,10 +146,10 @@ botty.register_plugin(AgarioPlugin(botty))
 
 # start administrator console in production mode
 if not DEBUG:
-    # define useful functions for administration
     def say(channel, text):
         """Say `text` in `channel` where `text` is a sendable text string and `channel` is a channel name like #general."""
         botty.say(botty.get_channel_id_by_name(channel), text)
+
     def reload_plugin(package_name, class_name):
         """Reload plugin from its plugin class `class_name` from package `package_name`."""
         # obtain the new plugin
@@ -163,6 +164,41 @@ if not DEBUG:
                 del botty.plugins[i]
                 break
         botty.register_plugin(PluginClass(botty))
+
+    def sane():
+        """Force the administrator's console into a reasonable default - useful for recovering from weird terminal states."""
+        import os
+        os.system("stty sane")
+
+    from datetime import datetime
+    from plugins.utilities import BasePlugin
+    def on_message_default(plugin, message): pass
+    def on_message_print(plugin, message):
+        """Print out all incoming events - useful for interactive RTM API debugging."""
+        if message.get("type") == "message":
+            timestamp = datetime.fromtimestamp(int(message["ts"].split(".")[0]))
+            channel_name = botty.get_channel_name_by_id(message.get("channel", message.get("previous_message", {}).get("channel")))
+            user_name = botty.get_user_name_by_id(message.get("user", message.get("previous_message", {}).get("user")))
+            text = message.get("text", message.get("previous_message", {}).get("text"))
+            new_text = message.get("message", {}).get("text")
+            if new_text:
+                print("{timestamp} #{channel} | @{user} {subtype}: {text} -> {new_text}".format(
+                    timestamp=timestamp, channel=channel_name, user=user_name,
+                    subtype=message.get("subtype", "message"), text=text, new_text=new_text
+                ))
+            else:
+                print("{timestamp} #{channel} | @{user} {subtype}: {text}".format(
+                    timestamp=timestamp, channel=channel_name, user=user_name,
+                    subtype=message.get("subtype", "message"), text=text
+                ))
+        elif message.get("type") not in {"ping", "pong", "presence_change", "user_typing", "reconnect_url"}:
+            print(message)
+    on_message = on_message_default
+    class AdHocPlugin(BasePlugin):
+        def __init__(self, bot): super().__init__(bot)
+        def on_message(self, message): on_message(self, message)
+    if not any(isinstance(plugin, AdHocPlugin) for plugin in botty.plugins): # plugin hasn't already been added
+        botty.plugins.insert(0, AdHocPlugin(botty)) # the plugin should go before everything else to be able to influence every message
 
     botty.administrator_console(globals())
 

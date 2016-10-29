@@ -55,12 +55,12 @@ class PersonalityPlugin(BasePlugin):
                 "say `poll start DESCRIPTION` if y'all gotta decide something\n"
                 "say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously\n"
                 "say `sup botty` if you're wondering where the haps are\n"
-                "say `yo botty` to receive some :fire: lines"
+                "say `yo botty` to receive some :fire: lines\n"
                 "say `embiggenify TEXT` if your typing is too quiet\n"
                 "say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding\n"
                 "say `quote me SOMETHING` if you're, like, a professional quote maker or something\n"
                 "say `pls agar me PLAYER1, PLAYER2, ...` if you hate being productive (`<`/`>` to move, `<-`/`>-` to fire mass, `</`/`>/` to split)\n"
-                "say `thanks botty`, just because you should"
+                "say `thanks botty`, just because you should\n"
                 "plus a bunch of other secret ~bugs~ undocumented features to discover"
             ),
             r"(?i)\b(?:thanks|thx|ty)\b.*\bbotty\b": lambda match: self.respond_raw(random.choice(
