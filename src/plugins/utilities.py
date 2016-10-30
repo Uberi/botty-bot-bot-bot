@@ -7,6 +7,7 @@ Should be imported by all Botty plugins.
 """
 
 import os, re
+import functools
 
 CHAT_HISTORY_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "@history")
 
@@ -15,6 +16,8 @@ class BasePlugin:
     def __init__(self, bot):
         self.bot = bot
         self.logger = bot.logger.getChild(self.__class__.__name__)
+
+        self.flows = {}
 
     def get_history_files(self):
         """Returns a mapping from channel names to absolute file paths of their history entries"""
@@ -91,3 +94,28 @@ class BasePlugin:
     def text_to_sendable_text(self, text): return self.bot.text_to_sendable_text(text)
     def sendable_text_to_text(self, sendable_text): return self.bot.sendable_text_to_text(sendable_text)
     def get_bot_user_id(self): return self.bot.bot_user_id
+
+class Flow:
+    """Create a new `Flow` instance (which map keys to generator iterators) with `generator_function` as its generator function. This class can be used to replace many complex message handling state machines with clean and concise Python code."""
+    def __init__(self, generator_function):
+        self.generator_function = generator_function
+        self.generator_iterators = {}
+
+    def start(self, flow_key, parameter_data = None):
+        """Discards the current generator iterator associated with key `flow_key`, creates a new state machine from the generator function by calling it with `parameter_data` as an argument, then runs the state machine until it first yields."""
+        self.generator_iterators[flow_key] = self.generator_function(parameter_data)
+        next(self.generator_iterators[flow_key]) # run the generator all the way up until it first yields
+
+    def is_running(self, flow_key):
+        """Returns `True` if there is currently a generator iterator associated with key `flow_key`, `False` otherwise."""
+        return flow_key in self.generator_iterators
+
+    def step(self, flow_key, yield_data = None):
+        """Returns the result of running the generator iterator associated with key `flow_key` (sending the iterator `yield_data` in the process), or `False` if there is no such generator iterator."""
+        if flow_key not in self.generator_iterators: return False
+        try:
+            return self.generator_iterators[flow_key].send(yield_data)
+        except StopIteration as e:
+            del self.generator_iterators[flow_key] # remove the completed flow
+            return e.value
+        return False
