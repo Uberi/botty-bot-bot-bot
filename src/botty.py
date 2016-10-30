@@ -5,6 +5,26 @@ from collections import deque
 
 from bot import SlackBot
 
+# process settings
+#logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.basicConfig(filename="botty.log", level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+def initialize_plugins(botty):
+    """Import, register, and initialize Botty plugins. Edit the body of this function to change which plugins are loaded."""
+    from plugins.arithmetic import ArithmeticPlugin; botty.register_plugin(ArithmeticPlugin(botty))
+    from plugins.timezones import TimezonesPlugin; botty.register_plugin(TimezonesPlugin(botty))
+    from plugins.poll import PollPlugin; botty.register_plugin(PollPlugin(botty))
+    from plugins.wiki import WikiPlugin; botty.register_plugin(WikiPlugin(botty))
+    from plugins.haiku import HaikuPlugin; botty.register_plugin(HaikuPlugin(botty))
+    from plugins.personality import PersonalityPlugin; botty.register_plugin(PersonalityPlugin(botty))
+    from plugins.events import EventsPlugin; botty.register_plugin(EventsPlugin(botty))
+    from plugins.now_i_am_dude import NowIAmDudePlugin; botty.register_plugin(NowIAmDudePlugin(botty))
+    from plugins.generate_text import GenerateTextPlugin; botty.register_plugin(GenerateTextPlugin(botty))
+    from plugins.big_text import BigTextPlugin; botty.register_plugin(BigTextPlugin(botty))
+    from plugins.uw_courses import UWCoursesPlugin; botty.register_plugin(UWCoursesPlugin(botty))
+    from plugins.spaaace import SpaaacePlugin; botty.register_plugin(SpaaacePlugin(botty))
+    from plugins.agario import AgarioPlugin; botty.register_plugin(AgarioPlugin(botty))
+
 if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] in {"--help", "-h", "-?"}):
     print("Usage: {} --help".format(sys.argv[0]))
     print("    Show this help message")
@@ -15,9 +35,6 @@ if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] in {"--help", "-h", 
     print("    SLACK_BOT_TOKEN is a Slack API token (can be obtained from https://api.slack.com/)")
     sys.exit(1)
 
-# process settings
-#logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logging.basicConfig(filename="botty.log", level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 DEBUG = len(sys.argv) < 2
 if DEBUG:
     from bot import SlackDebugBot as SlackBot
@@ -104,45 +121,7 @@ class Botty(SlackBot):
         return self.unreact(self.last_message_channel_id, self.last_message_timestamp, emoticon)
 
 botty = Botty(SLACK_TOKEN)
-
-from plugins.arithmetic import ArithmeticPlugin
-botty.register_plugin(ArithmeticPlugin(botty))
-
-from plugins.timezones import TimezonesPlugin
-botty.register_plugin(TimezonesPlugin(botty))
-
-from plugins.poll import PollPlugin
-botty.register_plugin(PollPlugin(botty))
-
-from plugins.wiki import WikiPlugin
-botty.register_plugin(WikiPlugin(botty))
-
-from plugins.haiku import HaikuPlugin
-botty.register_plugin(HaikuPlugin(botty))
-
-from plugins.personality import PersonalityPlugin
-botty.register_plugin(PersonalityPlugin(botty))
-
-from plugins.events import EventsPlugin
-botty.register_plugin(EventsPlugin(botty))
-
-from plugins.now_i_am_dude import NowIAmDudePlugin
-botty.register_plugin(NowIAmDudePlugin(botty))
-
-from plugins.generate_text import GenerateTextPlugin
-botty.register_plugin(GenerateTextPlugin(botty))
-
-from plugins.big_text import BigTextPlugin
-botty.register_plugin(BigTextPlugin(botty))
-
-from plugins.uw_courses import UWCoursesPlugin
-botty.register_plugin(UWCoursesPlugin(botty))
-
-from plugins.spaaace import SpaaacePlugin
-botty.register_plugin(SpaaacePlugin(botty))
-
-from plugins.agario import AgarioPlugin
-botty.register_plugin(AgarioPlugin(botty))
+initialize_plugins(botty)
 
 # start administrator console in production mode
 if not DEBUG:
