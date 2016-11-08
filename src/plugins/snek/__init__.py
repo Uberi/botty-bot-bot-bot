@@ -35,10 +35,10 @@ class SnekPlugin(BasePlugin):
             ("snake_head", 1),
         ]
         self.snake_body = [
-            ("snake_body0", 20),
-            ("snake_body1", 10),
-            ("snake_body2", 10),
-            ("snake_body3", 10),
+            ("snake_body0", 30),
+            ("snake_body1", 20),
+            ("snake_body2", 20),
+            ("snake_body3", 20),
             ("snake_body4", 4),
             ("snake_body5", 4),
             ("snake_body6", 2),
@@ -47,13 +47,13 @@ class SnekPlugin(BasePlugin):
             ("snake_body9", 2),
         ]
         self.snake_tail = [
-            ("snake_tail0", 20),
+            ("snake_tail0", 30),
             ("snake_tail1", 15),
             ("snake_tail2", 10),
             ("snake_tail3", 8),
             ("snake_tail4", 8),
         ]
-        self.sample_length_distribution = lambda: int(max(2, min(25, random.gauss(15, 3))))
+        self.sample_length_distribution = lambda: random.randint(0, 25)
 
     def on_message(self, message):
         text = self.get_message_text(message)
