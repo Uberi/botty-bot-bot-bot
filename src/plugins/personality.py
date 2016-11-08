@@ -72,7 +72,6 @@ class PersonalityPlugin(BasePlugin):
             r"(?i)\bfor\s+the\s+(cd|record)\b": lambda match: self.reply("cd"),
             r"(?i)\begg":                       lambda match: self.reply("eggplant"),
             r"(?i)\b(nugget|nugs?|chicken)\b":  lambda match: self.reply("chicken"),
-            r"(?i)\b(sna+kes?|sneks?)\b":       lambda match: self.reply("snake"),
             r"(?i)\baha\b":                     lambda match: self.reply("aha"),
         }
 

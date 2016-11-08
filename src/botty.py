@@ -24,6 +24,7 @@ def initialize_plugins(botty):
     from plugins.uw_courses import UWCoursesPlugin; botty.register_plugin(UWCoursesPlugin(botty))
     from plugins.spaaace import SpaaacePlugin; botty.register_plugin(SpaaacePlugin(botty))
     from plugins.agario import AgarioPlugin; botty.register_plugin(AgarioPlugin(botty))
+    from plugins.snek import SnekPlugin; botty.register_plugin(SnekPlugin(botty))
 
 if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] in {"--help", "-h", "-?"}):
     print("Usage: {} --help".format(sys.argv[0]))
