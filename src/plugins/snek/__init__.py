@@ -58,7 +58,7 @@ class SnekPlugin(BasePlugin):
     def on_message(self, message):
         text = self.get_message_text(message)
         if text is None: return False
-        match = re.search(r"\b(sna+kes?|sna+k|sneks?)\b", text, re.IGNORECASE)
+        match = re.search(r"\bs+n+[aeiou]+k+e*s*\b", text, re.IGNORECASE)
         if not match: return False
 
         snake_length = self.sample_length_distribution()
