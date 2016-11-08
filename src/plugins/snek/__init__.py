@@ -22,12 +22,12 @@ class SnekPlugin(BasePlugin):
 
     Example invocations:
 
-        #general    | Me: snek
-        #general    | Botty: :snake_tail4::snake_body9::snake_body0::snake_body0::snake_body3::snake_body4::snake_body2::snake_body3::snake_body7::snake_body0::snake_body0::snake_body0::snake_body1::snake_body0::snake_body6::snake_body0::snake_head:
-        #general    | Me: snaaaaake
-        #general    | Botty: :snake_tail2::snake_body1::snake_body3::snake_body2::snake_body3::snake_body2::snake_body6::snake_body5::snake_head:
-        #general    | Me: snakes???
-        #general    | Botty: :snake_tail1::snake_body1::snake_body2::snake_body4::snake_body0::snake_body7::snake_body7::snake_body0::snake_body4::snake_body0::snake_body0::snake_body2::snake_body3::snake_body2::snake_body5::snake_head:
+        #general    | Me: snk
+        #general    | Botty: :snake_tail0::snake_head:
+        #general    | Me: snake
+        #general    | Botty: :snake_tail4::snake_body0::snake_head:
+        #general    | Me: sneeeeeeeeeeeeeeeekeeeee
+        #general    | Botty: :snake_tail0::snake_body1::snake_body0::snake_body3::snake_body5::snake_body0::snake_body0::snake_body0::snake_body5::snake_body1::snake_body9::snake_body0::snake_body1::snake_body1::snake_body1::snake_body7::snake_body0::snake_head:
     """
     def __init__(self, bot):
         super().__init__(bot)
@@ -53,15 +53,14 @@ class SnekPlugin(BasePlugin):
             ("snake_tail3", 8),
             ("snake_tail4", 8),
         ]
-        self.sample_length_distribution = lambda: random.randint(0, 25)
 
     def on_message(self, message):
         text = self.get_message_text(message)
         if text is None: return False
-        match = re.search(r"\bs+n+[aeiou]+k+e*s*\b", text, re.IGNORECASE)
+        match = re.search(r"\bs+n+([aeiou]*)k+e*s*\b", text, re.IGNORECASE)
         if not match: return False
 
-        snake_length = self.sample_length_distribution()
+        snake_length = min(200, len(match.group(1))) # 200 is guaranteed to stay within the 4000 character limit
         snake_sequence = [weighted_choose(self.snake_tail)] + [weighted_choose(self.snake_body) for _ in range(snake_length)] + [weighted_choose(self.snake_head)]
         snake_message = "".join(":{}:".format(entry) for entry in snake_sequence)
 
