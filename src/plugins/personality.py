@@ -50,6 +50,7 @@ class PersonalityPlugin(BasePlugin):
                 "say `botty help` to get a light bedtime read\n"
                 "say `calc SYMPY_EXPRESSION` to do some math\n"
                 "say `botty what's SOMETHING` if you're too lazy to open a new tab and go to Wikipedia\n"
+                "say `snaake` for some :snake:e:snake:x:snake:c:snake:e:snake:l:snake:l:snake:e:snake:n:snake:t:snake:r:snake:e:snake:p:snake:t:snake:i:snake:l:snake:e:snake:s:snake:\n"
                 "say `botty PHRASE` if you don't mind the echoes\n"
                 "say `pls haiku me` if you're feeling poetic\n"
                 "say `poll start DESCRIPTION` if y'all gotta decide something\n"
