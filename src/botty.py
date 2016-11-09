@@ -158,7 +158,8 @@ if not DEBUG:
 
     from datetime import datetime
     from plugins.utilities import BasePlugin
-    def on_message_default(plugin, message): pass
+    def on_message_default(plugin, message): return False
+    def on_message_disabled(plugin, message): return True
     def on_message_print(plugin, message):
         """Print out all incoming events - useful for interactive RTM API debugging."""
         if message.get("type") == "message":
@@ -179,10 +180,11 @@ if not DEBUG:
                 ))
         elif message.get("type") not in {"ping", "pong", "presence_change", "user_typing", "reconnect_url"}:
             print(message)
+        return False
     on_message = on_message_default
     class AdHocPlugin(BasePlugin):
         def __init__(self, bot): super().__init__(bot)
-        def on_message(self, message): on_message(self, message)
+        def on_message(self, message): return on_message(self, message)
     if not any(isinstance(plugin, AdHocPlugin) for plugin in botty.plugins): # plugin hasn't already been added
         botty.plugins.insert(0, AdHocPlugin(botty)) # the plugin should go before everything else to be able to influence every message
 

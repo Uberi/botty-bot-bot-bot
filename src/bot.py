@@ -231,6 +231,7 @@ class SlackBot:
 
     def get_user_is_bot(self, user_id):
         """Returns `True` if the user with ID `user_id` is a bot user, `False` otherwise."""
+        if user_id == "USLACKBOT": return True # for some reason, Slack doesn't consider Slackbot a real bot
         user_info = self.get_user_info_by_id_cached(user_id)
         return user_info.get("is_bot", False)
 
