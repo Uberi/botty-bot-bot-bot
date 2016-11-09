@@ -63,8 +63,14 @@ class Botty(SlackBot):
         self.logger.debug("received message message {}".format(message))
         timestamp = self.get_message_timestamp(message)
         if timestamp: self.last_message_timestamp = timestamp
+
+        # save channel to use with response
         channel = self.get_message_channel(message)
         if channel: self.last_message_channel_id = channel
+
+        # ignore bot messages
+        sender = self.get_message_sender(message)
+        if sender is not None and self.get_user_is_bot(sender): return
 
         # save recent message events
         if message.get("type") not in {"ping", "pong", "presence_change", "user_typing", "reconnect_url"}:
@@ -96,7 +102,7 @@ class Botty(SlackBot):
 
     def get_message_sender(self, message):
         """Returns the ID of the user who sent `message` if there is one, or `None` otherwise"""
-        if isinstance(message.get("user"), str): return message["user"]
+        if isinstance(message.get("user"), str): return message["user"] # normal message
         if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str): # edited message
             return message["message"]["user"]
         return None

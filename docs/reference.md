@@ -40,6 +40,7 @@ Plugins inherit a number of methods from the `BasePlugin` class in `src/plugins/
 * `self.get_user_id_by_name(user_id)` - returns the ID of the user with username `user_name`, or `None` if there are no users with that username.
 * `self.get_direct_message_channel_id_by_user_id(user_id)` - returns the channel ID of the direct message with the user with ID `user_id`, or `None` if the ID is invalid.
 * `self.get_user_info_by_id(user_id)` - returns a [metadata dictionary](https://api.slack.com/types/user) about the user with ID `user_id`.
+* `self.get_user_is_bot(user_id)` - returns `True` if the user with ID `user_id` is a bot user, `False` otherwise.
 * `self.text_to_sendable_text(text)` - returns `text`, a plain text string, converted into sendable text.
 * `self.sendable_text_to_text(sendable_text)` - returns `sendable_text`, a sendable text string, converted into plain text.
     * The transformation can lose some information for escape sequences, such as link labels.

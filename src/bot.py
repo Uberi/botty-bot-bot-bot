@@ -5,6 +5,7 @@ from datetime import datetime
 import traceback
 import logging
 from collections import deque
+from functools import lru_cache
 
 from slackclient import SlackClient
 
@@ -21,6 +22,9 @@ class SlackBot:
         self.client = SlackClient(token)
         if logger is None: self.logger = logging.getLogger(self.__class__.__name__)
         else: self.logger = logger
+
+        # cached versions of methods
+        self.get_user_info_by_id_cached = lru_cache(maxsize=256)(self.get_user_info_by_id)
 
         # incoming message fields
         self.unprocessed_incoming_messages = deque() # store unprocessed messages to allow message peeking
@@ -225,6 +229,11 @@ class SlackBot:
         assert isinstance(response.get("user"), dict) and "id" in response["user"], "User info response malformed: {}".format(response.get("user"))
         return response["user"]
 
+    def get_user_is_bot(self, user_id):
+        """Returns `True` if the user with ID `user_id` is a bot user, `False` otherwise."""
+        user_info = self.get_user_info_by_id_cached(user_id)
+        return user_info.get("is_bot", False)
+
     def server_text_to_sendable_text(self, server_text):
         """Returns `server_text`, a string in Slack server message format, converted into a string in Slack sendable message format."""
         assert isinstance(server_text, str), "`server_text` must be a string rather than \"{}\"".format(server_text)
@@ -402,6 +411,9 @@ class SlackDebugBot(SlackBot):
             "real_name": "Some Body",
             "tz": "Canada/Eastern", "tz_label": "Eastern Daylight Time", "tz_offset": -25200,
         }
+
+    def get_user_is_bot(self, user_id):
+        return False
 
     def administrator_console(self, namespace):
         raise NotImplementedError("The administrator console is not supported in the debug Slack bot.")

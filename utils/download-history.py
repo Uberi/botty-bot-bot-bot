@@ -96,7 +96,10 @@ def main():
             file_entry = message["file"]
             if "url_private_download" not in file_entry: continue # files like Google docs and such
             logging.info("DOWNLOADING FILE \"{}\" (ID {}) IN #{}".format(file_entry["name"], file_entry["id"], channel))
-            download_file("{} - {}".format(file_entry["id"], file_entry["name"]), file_entry["url_private_download"])
+            try:
+                download_file("{} - {}".format(file_entry["id"], file_entry["name"]), file_entry["url_private_download"])
+            except:
+                logging.exception("FILE DOWNLOAD FAILED FOR {}".format(file_entry["url_private_download"]))
         
         with open(message_file_path, "a") as f:
             for message in messages:
