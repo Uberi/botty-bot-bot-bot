@@ -19,7 +19,7 @@ class AgarioPlugin(BasePlugin):
         self.player_index = {}
         self.player_split_cooldown = {}
         self.game_map = []
-        self.game_channel = None
+        self.game_channel, self.game_thread = None, None
 
         self.map_size = 150
         self.empty = " "
@@ -36,11 +36,10 @@ class AgarioPlugin(BasePlugin):
 
         return True
 
-    def on_message(self, message):
-        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
-        if text is None or channel is None or user is None: return False
-        text = self.sendable_text_to_text(text)
-        user_name = self.get_user_name_by_id(user)
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        text = self.sendable_text_to_text(m.text)
+        user_name = self.get_user_name_by_id(m.user_id)
 
         # game start command
         match = re.search(r"^\s*pls\s+agar\s+me((?:\s+\S+)*)\s*$", text, re.IGNORECASE)
@@ -56,11 +55,11 @@ class AgarioPlugin(BasePlugin):
             players = list(players)
             random.shuffle(players)
 
-            self.initialize_game(channel, players)
+            self.initialize_game(m.channel_id, m.thread_id, players)
             return True
 
         if self.game_channel is None: return False # no game going on
-        if channel != self.game_channel: return False # message isn't in the right channel
+        if m.channel_id != self.game_channel: return False # message isn't in the right channel
 
         # game stop command
         match = re.search(r"\b(stop|end|terminate|off|disable)\b", text, re.IGNORECASE)
@@ -86,7 +85,7 @@ class AgarioPlugin(BasePlugin):
         return False
 
     def end_game(self):
-        self.game_channel = None
+        self.game_channel, self.game_thread = None, None
         masses = sorted(
             (
                 (player, sum(location[1] for location in locations))
@@ -94,6 +93,7 @@ class AgarioPlugin(BasePlugin):
             ),
             key = lambda pair: -pair[1]
         )
+
         self.respond(
             "*{} wins!*\n"
             "{}".format(
@@ -105,8 +105,8 @@ class AgarioPlugin(BasePlugin):
             )
         )
 
-    def initialize_game(self, channel, players):
-        self.game_channel = channel
+    def initialize_game(self, channel, thread, players):
+        self.game_channel, self.game_thread = channel, thread
         self.player_locations = {}
         self.player_movement = {}
         self.player_index = {}
@@ -121,11 +121,10 @@ class AgarioPlugin(BasePlugin):
         self.game_map = [self.food if random.random() < 0.3 else self.empty for i in range(self.map_size)]
 
         self.say(
-            channel,
-            "*AGAR.IO GAME STARTED* (players from left to right: {})\n"
-            "STARTING MAP: `{}`".format(
+            "*AGAR.IO GAME STARTED* (players from left to right: {})\nSTARTING MAP: `{}`".format(
                 ", ".join(players), self.render_map()
-            )
+            ),
+            channel_id=channel, thread_id=thread
         )
 
     def step_game(self):
@@ -208,7 +207,7 @@ class AgarioPlugin(BasePlugin):
                         else:
                             self.player_locations[player][blob2][0] = (position2 + amount) % self.map_size
 
-        self.say(self.game_channel, "`{}`".format(self.render_map()))
+        self.say("`{}`".format(self.render_map()), channel_id=self.game_channel, thread_id=self.game_thread)
 
     def fire(self, player, offset):
         locations = self.player_locations[player]
@@ -221,8 +220,6 @@ class AgarioPlugin(BasePlugin):
 
     def split(self, player, offset):
         locations = self.player_locations[player]
-        if offset < 0: offset -= location[1]
-        else: offset += location[1]
         new_locations = []
         for i, location in enumerate(locations):
             if location[1] >= 2: # splitting is possible
@@ -239,6 +236,6 @@ class AgarioPlugin(BasePlugin):
         for player, locations in self.player_locations.items():
             for position, size in locations:
                 result[round(position - size) % self.map_size] = "("
-                result[round(position)] = str(self.player_index[player] + 1)
+                result[round(position) % self.map_size] = str(self.player_index[player] + 1)
                 result[round(position + size) % self.map_size] = ")"
         return "".join(result)

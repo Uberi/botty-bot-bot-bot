@@ -12,7 +12,7 @@ class BigTextPlugin(BasePlugin):
 
     Example invocations:
 
-        #general    | Me: embiggenify hello
+        #general    | Me: biggify hello
         #general    | Botty: ```                                               
          ,dPYb,              ,dPYb, ,dPYb,             
          IP'`Yb              IP'`Yb IP'`Yb             
@@ -31,10 +31,9 @@ class BigTextPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
 
-    def on_message(self, message):
-        text = self.get_message_text(message)
-        if text is None: return False
-        match = re.search(r"^\s*\bembiggenify\s+(.{1,40})", text, re.IGNORECASE)
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        match = re.search(r"^\s*\bbiggify\s+(.{1,40})", m.text, re.IGNORECASE)
         if not match: return False
         query = match.group(1)
 

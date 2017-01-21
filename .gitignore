@@ -1,9 +1,9 @@
 @history/
 .ipynb_checkpoints/
 *-custom.*
-*.db
-src/plugins/spaaace/generated_image.jpg
+utils/history.db
 download-history.sh
+venv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

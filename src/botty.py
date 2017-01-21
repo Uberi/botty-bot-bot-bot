@@ -41,6 +41,7 @@ if DEBUG:
     from bot import SlackDebugBot as SlackBot
     SLACK_TOKEN = ""
     print("No Slack API token specified in command line arguments; starting in local debug mode...")
+    print()
 else:
     SLACK_TOKEN = sys.argv[1]
 
@@ -48,8 +49,9 @@ class Botty(SlackBot):
     def __init__(self, token):
         super().__init__(token)
         self.plugins = []
-        self.last_message_channel_id = None
         self.last_message_timestamp = None
+        self.last_message_thread_id = None
+        self.last_message_channel_id = None
         self.recent_events = deque(maxlen=2000) # store the last 2000 events
 
     def register_plugin(self, plugin_instance):
@@ -59,63 +61,39 @@ class Botty(SlackBot):
         for plugin in self.plugins:
             if plugin.on_step(): break
 
-    def on_message(self, message):
-        self.logger.debug("received message message {}".format(message))
-        timestamp = self.get_message_timestamp(message)
-        if timestamp: self.last_message_timestamp = timestamp
+    def on_message(self, message_dict):
+        self.logger.debug("received message {}".format(message_dict))
 
-        # save channel to use with response
-        channel = self.get_message_channel(message)
-        if channel: self.last_message_channel_id = channel
+        # check if the user is a bot and ignore the message if they are
+        user_id = message_dict.get("user", message_dict.get("message", {}).get("user"))
+        if isinstance(user_id, str) and self.get_user_is_bot(user_id): return
 
-        # ignore bot messages
-        sender = self.get_message_sender(message)
-        if sender is not None and self.get_user_is_bot(sender): return
+        message = IncomingMessage(message_dict, is_bot_message=False)
+        #try:
+        if True:
+            # we need to set all of these in one statement because if any of the accessors fail, none of the variables should be updated
+            self.last_message_timestamp, self.last_message_thread_id, self.last_message_channel_id = message.timestamp, message.thread_id, message.channel_id
+        #except ValueError: pass
 
         # save recent message events
-        if message.get("type") not in {"ping", "pong", "presence_change", "user_typing", "reconnect_url"}:
-            self.recent_events.append(message)
+        if message.is_action_message: self.recent_events.append(message)
 
         for plugin in self.plugins:
             if plugin.on_message(message):
                 self.logger.info("message handled by {}: {}".format(plugin.__class__.__name__, message))
                 break
 
-    def get_message_text(self, message):
-        """Returns the text value of `message` if it is a valid text message, or `None` otherwise"""
-        if message.get("type") == "message" and isinstance(message.get("ts"), str):
-            if isinstance(message.get("text"), str) and isinstance(message.get("user"), str): # normal message
-                return self.server_text_to_sendable_text(message["text"])
-            if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str) and isinstance(message["message"].get("text"), str): # edited message
-                return self.server_text_to_sendable_text(message["message"]["text"])
-        return None
-
-    def get_message_timestamp(self, message):
-        """Returns the timestamp of `message` if there is one, or `None` otherwise"""
-        if isinstance(message.get("ts"), str): return message["ts"]
-        return None
-
-    def get_message_channel(self, message):
-        """Returns the ID of the channel containing `message` if there is one, or `None` otherwise"""
-        if isinstance(message.get("channel"), str): return message["channel"]
-        return None
-
-    def get_message_sender(self, message):
-        """Returns the ID of the user who sent `message` if there is one, or `None` otherwise"""
-        if isinstance(message.get("user"), str): return message["user"] # normal message
-        if message.get("subtype") == "message_changed" and isinstance(message.get("message"), dict) and isinstance(message["message"].get("user"), str): # edited message
-            return message["message"]["user"]
-        return None
-
-    def respond(self, sendable_text):
-        """Say `sendable_text` in the channel that most recently received a message, returning the message ID (unique within each `SlackBot` instance)."""
+    def respond(self, sendable_text, *, as_thread=True):
+        """Say `sendable_text` in the channel/thread that most recently received a message, returning the message ID (unique within each `SlackBot` instance). If `as_thread` is truthy, this will create a thread for the message being responsed to if it wasn't in a thread."""
         assert self.last_message_channel_id is not None, "No message to respond to"
-        return self.say(self.last_message_channel_id, sendable_text)
+        thread_id = self.last_message_thread_id or (self.last_message_timestamp if as_thread else None)
+        return self.say(sendable_text, channel_id=self.last_message_channel_id, thread_id=thread_id)
 
-    def respond_complete(self, sendable_text):
-        """Say `sendable_text` in the channel that most recently received a message, waiting until the message is successfully sent, returning the message timestamp."""
+    def respond_complete(self, sendable_text, *, as_thread=True):
+        """Say `sendable_text` in the channel (and thread, if applicable) that most recently received a message, waiting until the message is successfully sent, returning the message timestamp. If `as_thread` is truthy, this will create a thread for the message being responsed to if it wasn't in a thread."""
         assert self.last_message_channel_id is not None, "No message to respond to"
-        return self.say_complete(self.last_message_channel_id, sendable_text)
+        thread_id = self.last_message_thread_id or (self.last_message_timestamp if as_thread else None)
+        return self.say_complete(sendable_text, channel_id=self.last_message_channel_id, thread_id=self.last_message_thread_id)
 
     def reply(self, emoticon):
         """React with `emoticon` to the most recently received message."""
@@ -127,6 +105,107 @@ class Botty(SlackBot):
         assert self.last_message_channel_id is not None and self.last_message_timestamp is not None, "No message to unreply to"
         return self.unreact(self.last_message_channel_id, self.last_message_timestamp, emoticon)
 
+class IncomingMessage:
+    """Represents a single incoming message event."""
+    def __init__(self, message_dict, is_bot_message):
+        self.message_dict = message_dict
+        self.is_bot_message = is_bot_message
+
+    def __repr__(self): return "<Message {}>".format(self.message_dict)
+
+    def __iter__(self): return iter(self.message_dict)
+
+    @property
+    def is_action_message(self):
+        """Returns `True` if the message represents an action by a user, as opposed to things we usually don't consider user actions, like server pings or going offline, `False` otherwise."""
+        return self.message_dict.get("type") not in {"ping", "pong", "presence_change", "user_typing", "reconnect_url"}
+
+    @property
+    def is_text_message(self):
+        """Returns `True` if the message represents a text message, `False` otherwise. If this returns `True`, the `Message.timestamp`, `Message.text`, `Message.user_id`, and `Message.channel_id` methods will be available."""
+        if self.message_dict.get("type") != "message": return False
+        if not isinstance(self.message_dict.get("ts"), str): return False
+        if not isinstance(self.message_dict.get("channel"), str): return False
+        if isinstance(self.message_dict.get("text"), str) and isinstance(self.message_dict.get("user"), str):
+            return True # ordinary message
+        if (
+            self.message_dict.get("subtype") == "message_changed" and
+            isinstance(self.message_dict.get("message"), dict) and
+            isinstance(self.message_dict["message"].get("user"), str) and
+            isinstance(self.message_dict["message"].get("channel"), str) and
+            isinstance(self.message_dict["message"].get("text"), str)
+        ):
+            return True # edited message
+        return False # not a text message
+
+    @property
+    def is_user_message(self):
+        """Returns `True` if the message represents a message sent by a real user (i.e., not a bot), `False` otherwise."""
+        return not self.is_bot_message
+
+    @property
+    def is_user_text_message(self):
+        """Returns `True` if the message represents a text message sent by a real user (i.e., not a bot), `False` otherwise."""
+        return not self.is_bot_message and self.is_text_message
+
+    @property
+    def is_reaction_addition(self):
+        """Returns `True` if the message represents a reaction being added, `False` otherwise."""
+        return self.message_dict.get("type") == "reaction_added" and self.channel_id and self.user_id
+
+    @property
+    def is_reaction_removal(self):
+        """Returns `True` if the message represents a reaction being removed, `False` otherwise."""
+        return self.message_dict.get("type") == "reaction_removed" and self.channel_id and self.user_id
+
+    @property
+    def timestamp(self):
+        """Returns the timestamp of the message, or raises a `ValueError` if there is none."""
+        reaction_timestamp = self.message_dict.get("item", {}).get("ts")
+        timestamp = self.message_dict.get("ts", reaction_timestamp)
+        if not isinstance(timestamp, str): raise ValueError("Message timestamp should be a string, but is \"{}\" instead".format(repr(timestamp)))
+        return timestamp
+
+    @property
+    def text(self):
+        """Returns the text content of the message as a string, or raises a `ValueError` if there is none."""
+        submessage_text = self.message_dict.get("message", {}).get("text")
+        text = self.message_dict.get("text", submessage_text)
+        if not isinstance(text, str): raise ValueError("Message text should be a string, but is \"{}\" instead".format(repr(text)))
+        return text
+
+    @property
+    def user_id(self):
+        """Returns the ID of the user that sent the message, or raises a `ValueError` if there is none."""
+        submessage_channel = self.message_dict.get("message", {}).get("user")
+        user_id = self.message_dict.get("user", submessage_channel)
+        if not isinstance(user_id, str): raise ValueError("Message user ID should be a string, but is \"{}\" instead".format(repr(user_id)))
+        return user_id
+
+    @property
+    def channel_id(self):
+        """Returns the ID of the channel that the message is in, or raises a `ValueError` if there is none."""
+        reaction_channel = self.message_dict.get("item", {}).get("channel")
+        submessage_channel = self.message_dict.get("message", {}).get("channel", reaction_channel)
+        channel_id = self.message_dict.get("channel", submessage_channel)
+        if not isinstance(channel_id, str): raise ValueError("Message channel ID should be a string, but is \"{}\" instead".format(repr(channel_id)))
+        return channel_id
+
+    @property
+    def thread_id(self):
+        """Returns the ID of the thread that the message is in, or `None` if the message is not in a thread."""
+        submessage_thread = self.message_dict.get("message", {}).get("thread_ts")
+        thread_id = self.message_dict.get("thread_ts", submessage_thread)
+        if thread_id is not None and not isinstance(thread_id, str): raise ValueError("Message thread ID should be a string, but is \"{}\" instead".format(repr(thread_id)))
+        return thread_id
+
+    @property
+    def reaction(self):
+        """Returns the name of the reaction for the reaction addition/removal message, or raises a `ValueError` if there is none."""
+        reaction = self.message_dict.get("reaction")
+        if not isinstance(reaction, str): raise ValueError("Message reaction value should be a string, but is \"{}\" instead".format(repr(reaction)))
+        return reaction
+
 botty = Botty(SLACK_TOKEN)
 initialize_plugins(botty)
 
@@ -134,7 +213,7 @@ initialize_plugins(botty)
 if not DEBUG:
     def say(channel, text):
         """Say `text` in `channel` where `text` is a sendable text string and `channel` is a channel name like #general."""
-        botty.say(botty.get_channel_id_by_name(channel), text)
+        botty.say(text, channel_id=botty.get_channel_id_by_name(channel))
 
     def reload_plugin(package_name, class_name):
         """Reload plugin from its plugin class `class_name` from package `package_name`."""

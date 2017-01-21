@@ -62,11 +62,10 @@ class NowIAmDudePlugin(BasePlugin):
                 if word in self.nouns and word != first_word:
                     return first_word, word
 
-    def on_message(self, message):
-        text = self.get_message_text(message)
-        if text is None: return False
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
 
-        if re.search(r"\bdu+de+\s+me+\b", text, re.IGNORECASE):
+        if re.search(r"\bdu+de+\s+me+\b", m.text, re.IGNORECASE):
             first, second = self.get_rhyming_pair()
             self.respond_raw("I was born {} but now I am {}".format(first, second))
             return True

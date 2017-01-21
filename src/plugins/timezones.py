@@ -58,10 +58,9 @@ class TimezonesPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
 
-    def on_message(self, message):
-        text, user = self.get_message_text(message), self.get_message_sender(message)
-        if text is None or user is None: return False
-        match = re.search(r"\b(\d\d?)(?::(\d\d))?(?:\s*(am|pm))?\s+(\w+)", text, re.IGNORECASE)
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        match = re.search(r"\b(\d\d?)(?::(\d\d))?(?:\s*(am|pm))?\s+(\w+)", m.text, re.IGNORECASE)
         if not match: return False
 
         # get time of day
@@ -74,14 +73,14 @@ class TimezonesPlugin(BasePlugin):
             hour = (hour % 12) + 12
         today = date.today()
         naive_timestamp = datetime(today.year, today.month, today.day, hour, minute)
+        timezone_name = match.group(4)
 
         # get timezone and localized timestamp
-        timezone_name = match.group(4)
         if timezone_name.lower() in timezone_abbreviations: # use the specified timezone
             timezone = timezone_abbreviations[timezone_name.lower()]
             timezone_is_from_user_info = False
         elif timezone_name.lower() in {"local", "here"}: # use the user's local timezone, specified in their profile
-            user_info = self.get_user_info_by_id(user)
+            user_info = self.get_user_info_by_id(m.user_id)
             try:
                 timezone = pytz.timezone(user_info.get("tz"))
             except: # user does not have a valid timezone
@@ -104,7 +103,7 @@ class TimezonesPlugin(BasePlugin):
                 timezone_conversions.append("*{}* :{}: {}:{:>02}".format(other_timezone_name.upper(), clockify(converted_timestamp), converted_timestamp.hour, converted_timestamp.minute))
 
         if timezone_is_from_user_info:
-            selected_time = "*{}*'s local time :{}: {}:{:>02}".format(timezone_name.upper(), self.untag_word(self.get_user_name_by_id(user)), clockify(timestamp), timestamp.hour, timestamp.minute)
+            selected_time = "(timezone from {}'s profile) *{}* :{}: {}:{:>02}".format(self.untag_word(self.get_user_name_by_id(m.user_id)), timezone_name.upper(), clockify(timestamp), timestamp.hour, timestamp.minute)
         else:
             selected_time = "*{}* :{}: {}:{:>02}".format(timezone_name.upper(), clockify(timestamp), timestamp.hour, timestamp.minute)
 

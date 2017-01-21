@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-sudo apt-get install python3-pip
-
 # modules used by bot
 pip3 install slackclient
 
@@ -15,6 +13,7 @@ pip3 install pyfiglet
 pip3 install google-api-python-client
 pip3 install pillow
 pip3 install imgurpython
+pip3 install pytz
 
 # modules used by web interface
 pip3 install flask

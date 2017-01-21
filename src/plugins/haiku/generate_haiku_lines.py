@@ -1,11 +1,27 @@
 #!/usr/bin/env python3
 
-import os, re, json
-import sqlite3
+import os, json, re
 
-from markov import Markov
+JSON_LINES_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "haiku_lines.json")
 
-SQLITE_DATABASE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "chains.db")
+PUNCTUATION = r"[`~@#$%_\\'+\-/]" # punctuation that is a part of text
+STANDALONE = r"(?:[!.,;()^&\[\]{}|*=<>?]|[dDpP][:8]|:\S)" # standalone characters or emoticons that wouldn't otherwise be captured
+WORD_PATTERN = STANDALONE + r"\S*|https?://\S+|(?:\w|" + PUNCTUATION + r")+" # token pattern
+WORD_MATCHER = re.compile(WORD_PATTERN, re.IGNORECASE)
+def tokenize_text(text):
+    return (m.lower() for m in WORD_MATCHER.findall(text))
+
+def load_word_syllable_counts():
+    word_syllable_counts = {}
+    hyphenation_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "mhyph.txt")
+    with open(hyphenation_file, "rb") as f:
+        for line in f.readlines():
+            try: word = line.rstrip(b"\r\n").replace(b"\xA5", b"").decode("UTF-8")
+            except UnicodeDecodeError: continue
+            syllables = 1 + line.count(b"\xA5") + line.count(b" ") + line.count(b"-")
+            word_syllable_counts[word] = syllables
+    return word_syllable_counts
+
 CHAT_HISTORY_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "@history")
 
 def get_metadata():
@@ -62,30 +78,32 @@ def get_history_files():
         return result
     return {}
 
-connection = sqlite3.connect(SQLITE_DATABASE)
-connection.execute("DROP TABLE IF EXISTS counts")
-connection.execute("DROP TABLE IF EXISTS chain")
-connection.execute("CREATE TABLE counts (key TEXT PRIMARY KEY, count INTEGER)")
-connection.execute("CREATE TABLE chain (key TEXT, next_word TEXT, occurrences INTEGER)")
-connection.execute("CREATE INDEX chain_key_index ON chain (key)")
+# obtain mapping from words to the number of syllables in those words
+word_syllable_counts = load_word_syllable_counts()
 
-markov = Markov(2) # Markov model with 2 word look-behind
+# find messages with 5 syllables and 7 syllables
+five_syllable_messages = []
+seven_syllable_messages = []
 for channel_name, history_file in get_history_files().items():
     with open(history_file, "r") as f:
         for entry in f:
             text = get_message_text(json.loads(entry))
-            if text is not None:
-                markov.train(Markov.tokenize_text(text))
+            if text is None: continue
 
-connection.executemany(
-    "INSERT INTO counts VALUES (?, ?)",
-    (("\n".join(key), occurrences) for key, occurrences in markov.counts.items())
-)
-connection.executemany(
-    "INSERT INTO chain VALUES (?, ?, ?)",
-    (("\n".join(key), next_word, occurrences) for key, next_mapping in markov.chain.items()
-                                   for next_word, occurrences in next_mapping.items())
-)
+            # count syllables in the text
+            syllables = 0
+            for token in tokenize_text(text):
+                if token in word_syllable_counts:
+                    syllables += word_syllable_counts[token]
+                else: # unknown word, ignore the whole message
+                    break
+            else:
+                if syllables == 5:
+                    five_syllable_messages.append(text)
+                elif syllables == 7:
+                    seven_syllable_messages.append(text)
 
-connection.commit()
-connection.close()
+# store result
+result = {"five_syllables": five_syllable_messages, "seven_syllables": seven_syllable_messages}
+with open(JSON_LINES_FILE, "w") as f:
+    json.dump(result, f)

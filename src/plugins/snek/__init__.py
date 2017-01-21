@@ -54,15 +54,14 @@ class SnekPlugin(BasePlugin):
             ("snake_tail4", 8),
         ]
 
-    def on_message(self, message):
-        text = self.get_message_text(message)
-        if text is None: return False
-        match = re.search(r"\bs+n+([aeiou]*)k+e*s*\b", text, re.IGNORECASE)
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        match = re.search(r"\bs+n+([aeiou]*)k+e*s*\b", m.text, re.IGNORECASE)
         if not match: return False
 
         snake_length = min(200, len(match.group(1))) # 200 is guaranteed to stay within the 4000 character limit
         snake_sequence = [weighted_choose(self.snake_tail)] + [weighted_choose(self.snake_body) for _ in range(snake_length)] + [weighted_choose(self.snake_head)]
         snake_message = "".join(":{}:".format(entry) for entry in snake_sequence)
 
-        self.respond_raw(snake_message)
+        self.respond_raw(snake_message, as_thread=True)
         return True

@@ -30,10 +30,9 @@ class UWCoursesPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
 
-    def on_message(self, message):
-        text = self.get_message_text(message)
-        if text is None: return False
-        match = re.search(r"^\s*uw\s+courses?\s+([^,]+(?:,[^,]+)*)", text, re.IGNORECASE)
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        match = re.search(r"^\s*uw\s+courses?\s+([^,]+(?:,[^,]+)*)", m.text, re.IGNORECASE)
         if not match: return False
         query = match.group(1)
 

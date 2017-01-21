@@ -24,9 +24,10 @@ class PersonalityPlugin(BasePlugin):
         say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously
         say `sup botty` if you're wondering where the haps are
         say `yo botty` to receive some :fire: lines
+        say `dude me` if you were born nude
         say `botty remind CHANNEL NATURAL_LANGUAGE_TIMES: DESCRIPTION` if you want reminders
         say `botty unremind DESCRIPTION` if you don't
-        say `embiggenify TEXT` if your typing is too quiet
+        say `biggify TEXT` if your typing is too quiet
         say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding
         say `quote me SOMETHING` if you're, like, a professional quote maker or something
         say `thanks botty`, just because you should
@@ -41,7 +42,7 @@ class PersonalityPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
         
-        self.last_entries = {} # mapping from channel IDs to [last message in that channel, sender of last message, number of repetitions]
+        self.last_entries = {} # mapping from (channel ID, thread ID) to [last message in that channel, sender of last message, number of repetitions]
         self.message_repeated_threshold = 2 # minimum number of message repeats in a channel before we repeat it as well
 
         self.simple_pattern_actions = {
@@ -57,7 +58,8 @@ class PersonalityPlugin(BasePlugin):
                 "say `poll secret DESCRIPTION` if ya gotta do that, but like, anonymously\n"
                 "say `sup botty` if you're wondering where the haps are\n"
                 "say `yo botty` to receive some :fire: lines\n"
-                "say `embiggenify TEXT` if your typing is too quiet\n"
+                "say `dude me` if you were born nude\n"
+                "say `biggify TEXT` if your typing is too quiet\n"
                 "say `uw course COURSE1, COURSE2, ...` if your schedule needs some padding\n"
                 "say `quote me SOMETHING` if you're, like, a professional quote maker or something\n"
                 "say `pls agar me PLAYER1, PLAYER2, ...` if you hate being productive (`<`/`>` to move, `<-`/`>-` to fire mass, `</`/`>/` to split)\n"
@@ -76,18 +78,18 @@ class PersonalityPlugin(BasePlugin):
             r"(?i)\baha\b":                     lambda match: self.reply("aha"),
         }
 
-    def on_message(self, message):
-        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
-        if text is None or channel is None or user is None: return False
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        key = (m.channel_id, m.thread_id) # index states by channel and thread
 
         # compute the number of times different people have repeated it
-        if channel in self.last_entries and text == self.last_entries[channel][0] and user != self.last_entries[channel][1]:
-            self.last_entries[channel][2] += 1
+        if key in self.last_entries and m.text == self.last_entries[key][0] and m.user_id != self.last_entries[key][1]:
+            self.last_entries[key][2] += 1
         else:
-            self.last_entries[channel] = [text, user, 1]
+            self.last_entries[key] = [m.text, m.user_id, 1]
 
         for pattern, action in self.simple_pattern_actions.items():
-            match = re.search(pattern, text)
+            match = re.search(pattern, m.text)
             if match:
                 try:
                     action(match)
@@ -95,18 +97,13 @@ class PersonalityPlugin(BasePlugin):
                 except: # simple responses shouldn't be able to crash us
                     pass
 
-        if random.random() < 0.005:
+        if random.random() < 0.001:
             self.reply(random.choice(["lenny", "boredparrot", "pugrun", "chart_with_downwards_trend"]))
 
         # repeat this message if other people have repeated it enough times, 50% of the time
-        if self.last_entries[channel][2] >= self.message_repeated_threshold and random.random() < 0.5:
-            self.respond(text) # repeat the message
-            del self.last_entries[channel]
-            return True
-
-        if re.search(r"^\s*(?:I\s+think|imo|if\s+you\s+ask\s+me)\b", text, re.IGNORECASE) and random.random() < 0.01:
-            user_name = self.get_user_name_by_id(user)
-            self.respond_raw(random.choice(["nah", "{}, I disagree".format(user_name), "I don't think so {}".format(user_name), "I doubt that {}".format(user_name)]))
+        if self.last_entries[key][2] >= self.message_repeated_threshold and random.random() < 0.5:
+            self.respond(m.text) # repeat the message
+            del self.last_entries[key]
             return True
 
         return False

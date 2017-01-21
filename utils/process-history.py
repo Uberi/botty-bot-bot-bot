@@ -18,6 +18,7 @@ parser.add_argument("-u", "--filter-user", help="Show only messages by users wit
 parser.add_argument("-i", "--filter-text", help="Show only messages with text matching a specified regular expression (e.g., \"wings?\", \"chicken\\s+nuggets\").")
 parser.add_argument("-s", "--sort", choices=["time", "channel", "user", "text"], default="time", help="Sort the resulting messages by the specified criteria.")
 parser.add_argument("-r", "--context", type=int, default=0, help="Show a specified number of surrounding messages around the channel in each matched message.")
+parser.add_argument("-o", "--output", default="{timestamp} {channel:>15} {marker} {user}: {text}", help="Show output using the specified Python format string (e.g., \"{user}: {text}\").")
 args = parser.parse_args()
 
 # process --history argument
@@ -31,12 +32,6 @@ if not os.path.exists(CHAT_HISTORY_DIRECTORY):
 if not os.path.isdir(CHAT_HISTORY_DIRECTORY):
     print("Non-directory specified via the --history flag.", file=sys.stderr)
     sys.exit(1)
-
-# load metadata
-with open(os.path.join(CHAT_HISTORY_DIRECTORY, "metadata", "channels.json")) as f:
-    CHANNELS = json.load(f)
-with open(os.path.join(CHAT_HISTORY_DIRECTORY, "metadata", "users.json")) as f:
-    USERS = json.load(f)
 
 # process --filter-from argument
 if args.filter_from:
@@ -63,10 +58,43 @@ FILTER_USER = re.compile(args.filter_user) if args.filter_user else None # proce
 FILTER_TEXT = re.compile(args.filter_text) if args.filter_text else None # process --filter-text arguments
 SORT_BY = args.sort # process --sort argument
 CONTEXT = args.context # process --context argument
+OUTPUT = args.output # process --output argument
+
+def get_metadata():
+    with open(os.path.join(CHAT_HISTORY_DIRECTORY, "metadata", "users.json"), "r") as f:
+        entries = json.load(f)
+        user_names = {entry["id"]: entry["name"] for entry in entries}
+        user_real_names = {entry["id"]: entry["profile"]["real_name"] for entry in entries}
+    with open(os.path.join(CHAT_HISTORY_DIRECTORY, "metadata", "channels.json"), "r") as f:
+        entries = json.load(f)
+        channel_names = {entry["id"]: entry["name"] for entry in entries}
+    return user_names, user_real_names, channel_names
+
+USER_NAMES_BY_ID, USER_REAL_NAMES_BY_ID, CHANNEL_NAMES_BY_ID = get_metadata()
+
+def server_text_to_text(server_text):
+    """Returns `server_text`, a string in Slack server message format, converted into a plain text string. The transformation can lose some information for escape sequences, such as link labels."""
+    assert isinstance(server_text, str), "`server_text` must be a string rather than \"{}\"".format(server_text)
+    text_without_special_sequences = re.sub(r"<[^<>]*>", "", server_text)
+    assert "<" not in text_without_special_sequences and ">" not in text_without_special_sequences, "Invalid special sequence in server text \"{}\", perhaps some text needs to be escaped"
+
+    # process link references
+    def process_special_sequence(match):
+        original, body = match.group(0), match.group(1).split("|")[0]
+        if body.startswith("#"): # channel reference
+            return "#" + CHANNEL_NAMES_BY_ID[body[1:]] if body[1:] in CHANNEL_NAMES_BY_ID else original
+        if body.startswith("@"): # user reference
+            return "@" + USER_NAMES_BY_ID[body[1:]] if body[1:] in USER_NAMES_BY_ID else original
+        if body.startswith("!"): # special command
+            if body == "!channel": return "@channel"
+            if body == "!group": return "@group"
+            if body == "!everyone": return "@everyone"
+        return body # link, should remove angle brackets and label in order to allow it to linkify
+    raw_text = re.sub(r"<(.*?)>", process_special_sequence, server_text)
+
+    return raw_text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
 
 # process all the messages
-user_names_by_id = {entry["id"]: entry["name"] for entry in USERS}
-user_real_names_by_id = {entry["id"]: entry["real_name"] for entry in USERS if "real_name" in entry}
 previous_messages = deque(maxlen=CONTEXT)
 context_after = 0
 result = []
@@ -79,9 +107,9 @@ for dirpath, _, filenames in os.walk(CHAT_HISTORY_DIRECTORY):
             for line in f.readlines():
                 message = json.loads(line)
                 if "user" not in message or "text" not in message: continue
-                user_id, text = message["user"], message["text"]
-                user_name = user_names_by_id.get(user_id, user_id)
-                user_real_name = user_real_names_by_id.get(user_id, "")
+                user_id, text = message["user"], server_text_to_text(message["text"])
+                user_name = USER_NAMES_BY_ID.get(user_id, user_id)
+                user_real_name = USER_REAL_NAMES_BY_ID.get(user_id, "")
 
                 message_time = datetime.fromtimestamp(int(message["ts"].split(".")[0]))
                 if (
@@ -100,7 +128,7 @@ for dirpath, _, filenames in os.walk(CHAT_HISTORY_DIRECTORY):
                         context_after -= 1
                         result.append((message_time, channel_name, user_name, text, True))
                         previous_messages.clear() # prevent next match from duplicating context
-    break
+    break # stop processing after we walk the root directory
 
 # apply sorting
 if SORT_BY == "time":
@@ -114,4 +142,4 @@ elif SORT_BY == "text":
 
 # print out the results
 for (message_time, channel_name, user_name, text, is_context) in result:
-    print("{} {:>15} {} {}: {}".format(message_time, "#" + channel_name, "   " if is_context else ">>>", user_name, text))
+    print(OUTPUT.format(timestamp=message_time, channel="#" + channel_name, marker="   " if is_context else ">>>", user=user_name, text=text))

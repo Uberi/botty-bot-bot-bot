@@ -4,6 +4,7 @@ import re, os, random, io, json
 
 from PIL import Image, ImageFont, ImageDraw, ImageFilter
 from imgurpython import ImgurClient
+from imgurpython.helpers.error import ImgurClientError
 
 from ..utilities import BasePlugin
 
@@ -25,15 +26,22 @@ class SpaaacePlugin(BasePlugin):
         super().__init__(bot)
         with open(IMGUR_CREDENTIALS_FILE, "r") as f:
             credentials = json.load(f)
-            self.imgur_client = ImgurClient(credentials["client_id"], credentials["client_secret"])
+            try:
+                self.imgur_client = ImgurClient(credentials["client_id"], credentials["client_secret"])
+            except ImgurClientError as e:
+                self.logger.warning("Imgur client creation failed with `{}`, try checking the values in `{}`".format(e, IMGUR_CREDENTIALS_FILE))
+                self.imgur_client = e
 
-    def on_message(self, message):
-        text, channel, user = self.get_message_text(message), self.get_message_channel(message), self.get_message_sender(message)
-        if text is None or channel is None or user is None: return False
-        match = re.search(r"\bquote\s+me(?:\s+on\s+this)?\s*?,?\s+(?:but\s+)?(.+)", text, re.IGNORECASE)
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        match = re.search(r"\bquote\s+me(?:\s+on\s+this)?\s*?,?\s+(?:but\s+)?(.+)", self.sendable_text_to_text(m.text), re.IGNORECASE)
         if not match: return False
-        query = self.sendable_text_to_text(match.group(1))
-        user_name = self.get_user_name_by_id(user)
+        query = match.group(1)
+        user_name = self.get_user_name_by_id(m.user_id)
+
+        # fail gracefully if user has not configured this plugin yet
+        if isinstance(self.imgur_client, ImgurClientError):
+            self.respond_raw("oops, I don't have valid Imgur API credentials (`{}`) :( try checking the values in `{}`".format(self.imgur_client, IMGUR_CREDENTIALS_FILE))
 
         # generate segments of text
         segments = []

@@ -32,7 +32,6 @@ ALLOWED_NAMESPACE.update({
 })
 
 def whitelist_tokens(tokens, local_dict, global_dict):
-    print(tokens)
     for token_type, token_value in tokens:
         if token_type in ALLOWED_TOKENS:
             continue
@@ -85,19 +84,18 @@ class ArithmeticPlugin(BasePlugin):
     def __init__(self, bot):
         super().__init__(bot)
 
-    def on_message(self, message):
-        text = self.get_message_text(message)
-        if text is None: return False
-        match = re.search(r"^\s*\b(?:ca(?:lc(?:ulate)?)?|eval(?:uate)?)\s+(.+)", text, re.IGNORECASE)
+    def on_message(self, m):
+        if not m.is_user_text_message: return False
+        match = re.search(r"^\s*\b(?:ca(?:lc(?:ulate)?)?|eval(?:uate)?)\s+(.+)", m.text, re.IGNORECASE)
         if not match: return False
         query = self.sendable_text_to_text(match.group(1)) # get query as plain text in order to make things like < and > work (these are usually escaped)
 
         expression = evaluate_with_time_limit(query)
         if isinstance(expression, Exception): # evaluation resulted in error
             message = random.choice(["s a d e x p r e s s i o n s", "wat", "results hazy, try again later", "cloudy with a chance of thunderstorms", "oh yeah, I learned all about that in my sociology class", "eh too lazy, get someone else to do it", "would you prefer the truth or a lie?", "nice try", "you call that an expression?"])
-            self.respond_raw("{} ({})".format(message, expression))
+            self.respond_raw("{} ({})".format(message, expression), as_thread=True)
         elif expression is None: # evaluation timed out
-            self.respond_raw("tl;dr")
+            self.respond_raw("tl;dr", as_thread=True)
         else: # evaluation completed successfully
             if hasattr(expression, "evalf") and not isinstance(expression, numbers.Integer) and not isinstance(expression, numbers.Float):
                 value = expression.evalf(80)

@@ -12,18 +12,19 @@ Plugins inherit a number of methods from the `BasePlugin` class in `src/plugins/
 * `self.get_message_timestamp(message)` - returns the timestamp of `message` if there is one, or `None` otherwise.
 * `self.get_message_channel(message)` - returns the ID of the channel containing `message` if there is one, or `None` otherwise.
 * `self.get_message_sender(message)` - returns the ID of the user who sent `message` if there is one, or `None` otherwise.
-* `self.say(channel_id, sendable_text)` - send a message containing `sendable_text` to the channel with ID `channel_id`.
+* `self.say(sendable_text, *, channel_id, thread_id=None)` - send a message containing `sendable_text` to the channel with ID `channel_id`, optionally in the thread `thread_id` if specified.
     * `sendable_text` must be sendable text (see "Types of Text" for details).
     * Plain text can be converted into sendable text using `self.text_to_sendable_text`.
     * Returns a message ID (used internally, unique to every `SlackBot` instance).
-* `self.say_raw(channel_id, text)` - same as `self.say`, but `text` is plain text instead of sendable text.
-* `self.say_complete(channel_id, text)` and `self.say_complete(channel_id, text)` - same as `self.say` and `self.say_raw`, but waits for the message to fully send before returning.
+* `self.say_raw(text, *, channel_id, thread_id=None)` - same as `self.say`, but `text` is plain text instead of sendable text.
+* `self.say_complete(text, *, channel_id, thread_id=None)` and `self.say_raw_complete(text, *, channel_id, thread_id=None)` - same as `self.say` and `self.say_raw`, but waits for the message to fully send before returning.
     * Returns the message timestamp.
     * Raises a `TimeoutError` if sending times out, or a `ValueError` if sending fails.
-* `self.respond(sendable_text)` - does the same thing as `self.say`, but always sends the message to the channel of the message we most recently processed.
-    * If this is called within an `on_message(message)` handler, the message will always be sent to the same channel as the one containing `message`.
-* `self.respond_raw(text)` - same as `self.respond`, but `text` is plain text instead of sendable text.
-* `self.respond_complete(sendable_text)` and `self.respond_raw_complete(text)` - same as `self.respond` and `self.respond_raw`, but waits for the message to fully send before returning.
+* `self.respond(sendable_text, *, as_thread=False)` - same as `self.say`, but always sends the message to the channel (and thread, if applicable) of the message we most recently processed.
+    * If this is called within an `on_message(message)` handler, the message will always be sent to the same channel (and thread, if applicable) as the one containing `message`.
+    * If `as_thread` is truthy, the sent message will be in the most recently processed message's thread, even if that message wasn't in a thread.
+* `self.respond_raw(text, *, as_thread=False)` - same as `self.respond`, but `text` is plain text instead of sendable text.
+* `self.respond_complete(sendable_text, *, as_thread=False)` and `self.respond_raw_complete(text, *, as_thread=False)` - same as `self.respond` and `self.respond_raw`, but waits for the message to fully send before returning.
     * Returns the message timestamp.
     * Raises a `TimeoutError` if sending times out, or a `ValueError` if sending fails.
 * `react(channel_id, timestamp, emoticon)` - react with `emoticon` to the message with timestamp `timestamp` in channel with ID `channel_id`.

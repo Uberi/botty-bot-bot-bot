@@ -5,18 +5,57 @@ Personable chatbot for [Slack](https://slack.com/) using the [Slack Realtime Mes
 Features
 --------
 
-* **Test mode with simulated chat** in the command line: try Botty and Botty plugins offline, without using Slack at all.
+* **Debug mode with Botty Slack Simulation Environment**: interact with, test, and debug Botty and Botty plugins locally on the command line, without using Slack at all.
 * In-process **Python REPL**: monitor, patch, or control running Botty instances **without restarting** or editing files.
+* Excellent **Slack feature support**: supports reactions, threads/replies, message edits/deletions, and so on.
 * Simple and reliable: Botty gracefully handles **plugin exceptions**, **network issues**, and more.
 * Robust **plugin API**: friendly error messages and well-documented functions makes development fast and productive - each plugin is simply a Python class.
-* Excellent **Slack protocol compliance**: supports periodic ping, message escape sequences, and more, on top of the official Slack Python library.
+* Strong **Slack protocol compliance**: supports periodic ping, message escape sequences, and more, on top of the official Slack Python library.
 
 Deployment
 ----------
 
-To set up the prerequisites on a Debian-based Linux distribution, run `./setup.sh`.
+To set up the prerequisites, run `./setup.sh`, preferably in a virtualenv.
 
-To test locally, run `python3 src/botty.py` in the terminal. After Botty starts, there will be a command line simulated chat interface for testing purposes.
+To test locally, run `python3 src/botty.py` in the terminal:
+
+    $ ./src/botty.py
+    No Slack API token specified in command line arguments; starting in local debug mode...
+
+    ##########################################
+    #   Botty Slack Simulation Environment   #
+    ##########################################
+
+    This is a local chat containing only you and Botty. It's useful for testing and debugging.
+
+    The following slash commands are available:
+
+        /react -3 eggplant        | reacts to the third most recent text message with an eggplant
+        /unreact 1 heart          | removes the heart reaction from the second earliest text message
+        /reply -1 yeah definitely | replies to the most recent text message with "yeah definitely"
+        /channel random           | moves you and Botty to the #random channel
+
+    #general    | Me: hello
+    #general    | Me: calc integrate(1/x, x)
+    #general    | Botty: integrate(1/x, x) :point_right: log(x)
+    #general    | Me: /reply -1 threads work too :O
+    #general    | Me (in thread for "integrate(1/x, x) :point_right: log(x)"): threads work too :O
+    #general    | Me: where are the eggplants?
+    #general    | Botty reacted to "where are the eggplants?" with :eggplant:
+    #general    | Me: biggify hello
+    #general    | Botty: ```
+          ___           ___           ___       ___       ___     
+         /\__\         /\  \         /\__\     /\__\     /\  \    
+        /:/  /        /::\  \       /:/  /    /:/  /    /::\  \   
+       /:/__/        /:/\:\  \     /:/  /    /:/  /    /:/\:\  \  
+      /::\  \ ___   /::\~\:\  \   /:/  /    /:/  /    /:/  \:\  \ 
+     /:/\:\  /\__\ /:/\:\ \:\__\ /:/__/    /:/__/    /:/__/ \:\__\
+     \/__\:\/:/  / \:\~\:\ \/__/ \:\  \    \:\  \    \:\  \ /:/  /
+          \::/  /   \:\ \:\__\    \:\  \    \:\  \    \:\  /:/  / 
+          /:/  /     \:\ \/__/     \:\  \    \:\  \    \:\/:/  /  
+         /:/  /       \:\__\        \:\__\    \:\__\    \::/  /   
+         \/__/         \/__/         \/__/     \/__/     \/__/```
+    #general    | Me: 
 
 To run in production mode, run `python3 src/botty.py SLACK_API_TOKEN_GOES_HERE`, where `SLACK_API_TOKEN_GOES_HERE` is the Slack API token (obtainable from the [Slack API site](https://api.slack.com/)). Alternatively, edit `example-start-botty.sh` to replace `SLACK_API_TOKEN_GOES_HERE` with the Slack API token, then run `./example-start-botty.sh`.
 
@@ -36,7 +75,7 @@ See the [plugin writing guide](https://github.com/Uberi/botty-bot-bot-bot/blob/m
 License
 -------
 
-Copyright 2015-2016 [Anthony Zhang (Uberi)](https://anthony-zhang.me).
+Copyright 2015-2017 [Anthony Zhang (Uberi)](https://anthony-zhang.me).
 
 The source code is available online at [GitHub](https://github.com/Uberi/botty-bot-bot-bot).
 
