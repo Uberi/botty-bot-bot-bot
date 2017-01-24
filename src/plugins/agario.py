@@ -5,6 +5,7 @@ from math import floor, ceil
 from collections import namedtuple
 
 from .utilities import BasePlugin
+from .utilities import untag_word
 
 class AgarioPlugin(BasePlugin):
     """
@@ -97,9 +98,9 @@ class AgarioPlugin(BasePlugin):
         self.respond(
             "*{} wins!*\n"
             "{}".format(
-                self.untag_word(masses[0][0]),
+                untag_word(masses[0][0]),
                 "\n".join(
-                    "> *{}* has total mass {}".format(self.untag_word(player), total_mass)
+                    "> *{}* has total mass {}".format(untag_word(player), total_mass)
                     for player, total_mass in masses
                 )
             )

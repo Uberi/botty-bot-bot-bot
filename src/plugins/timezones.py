@@ -6,6 +6,7 @@ from datetime import datetime, date
 import pytz
 
 from .utilities import BasePlugin
+from .utilities import clockify, untag_word
 
 timezone_abbreviations = {
     "est":        pytz.timezone("Canada/Eastern"),
@@ -29,16 +30,6 @@ other_timezones = (
     ("vancouver", pytz.timezone("Canada/Pacific")),
     ("utc",       pytz.utc),
 )
-
-def clockify(dt):
-    day_ratio = ((dt.hour % 12) + ((dt.minute + (dt.second / 60)) / 60)) / 12
-    clock_emoji = [
-        "clock12", "clock1230", "clock1", "clock130", "clock2",
-        "clock230", "clock3", "clock330", "clock4", "clock430",
-        "clock5", "clock530", "clock6", "clock630", "clock7",
-        "clock730", "clock8", "clock830", "clock9", "clock930",
-        "clock10", "clock1030", "clock11", "clock1130", "clock12"]
-    return clock_emoji[round(day_ratio * (len(clock_emoji) - 1))]
 
 class TimezonesPlugin(BasePlugin):
     """
@@ -103,7 +94,7 @@ class TimezonesPlugin(BasePlugin):
                 timezone_conversions.append("*{}* :{}: {}:{:>02}".format(other_timezone_name.upper(), clockify(converted_timestamp), converted_timestamp.hour, converted_timestamp.minute))
 
         if timezone_is_from_user_info:
-            selected_time = "(timezone from {}'s profile) *{}* :{}: {}:{:>02}".format(self.untag_word(self.get_user_name_by_id(m.user_id)), timezone_name.upper(), clockify(timestamp), timestamp.hour, timestamp.minute)
+            selected_time = "(timezone from {}'s profile) *{}* :{}: {}:{:>02}".format(untag_word(self.get_user_name_by_id(m.user_id)), timezone_name.upper(), clockify(timestamp), timestamp.hour, timestamp.minute)
         else:
             selected_time = "*{}* :{}: {}:{:>02}".format(timezone_name.upper(), clockify(timestamp), timestamp.hour, timestamp.minute)
 
