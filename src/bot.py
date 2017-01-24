@@ -201,7 +201,7 @@ class SlackBot:
     def get_user_name_by_id(self, user_id):
         """Returns the username of the user with ID `user_id`, or `None` if there are no users with that ID."""
         assert isinstance(user_id, str), "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
-        for entry in self.client.server.users:
+        for key, entry in self.client.server.users.items():
             if entry.id == user_id: return entry.name
         return None
 
@@ -216,11 +216,11 @@ class SlackBot:
         if match: return match.group(1)
 
         # search by user name
-        for entry in self.client.server.users:
+        for key, entry in self.client.server.users.items():
             if entry.name == user_name: return entry.id
 
         # search by user real name
-        for entry in self.client.server.users:
+        for key, entry in self.client.server.users.items():
             if entry.real_name == user_name: return entry.id
 
         return None

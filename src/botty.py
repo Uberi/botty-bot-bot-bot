@@ -69,11 +69,10 @@ class Botty(SlackBot):
         if isinstance(user_id, str) and self.get_user_is_bot(user_id): return
 
         message = IncomingMessage(message_dict, is_bot_message=False)
-        #try:
-        if True:
+        try:
             # we need to set all of these in one statement because if any of the accessors fail, none of the variables should be updated
             self.last_message_timestamp, self.last_message_thread_id, self.last_message_channel_id = message.timestamp, message.thread_id, message.channel_id
-        #except ValueError: pass
+        except ValueError: pass
 
         # save recent message events
         if message.is_action_message: self.recent_events.append(message)
@@ -141,7 +140,13 @@ class IncomingMessage:
     @property
     def is_user_message(self):
         """Returns `True` if the message represents a message sent by a real user (i.e., not a bot), `False` otherwise."""
-        return not self.is_bot_message
+        if self.is_bot_message: return False
+
+        try:
+            self.timestamp, self.user_id, self.channel_id
+            return True
+        except ValueError:
+            return False
 
     @property
     def is_user_text_message(self):
