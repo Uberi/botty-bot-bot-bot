@@ -25,7 +25,7 @@ class WikiPlugin(BasePlugin):
 
     def on_message(self, m):
         if not m.is_user_text_message: return False
-        match = re.search(r"\b(?:what|who|wtf)(?:\s+is|'s)\s+([^,\?]+|\"[^\"]+\")", m.text, re.IGNORECASE)
+        match = re.search(r"\bbotty\s+(?:what|who|wtf)(?:\s+is|'s)\s+([^,\?]+|\"[^\"]+\")", m.text, re.IGNORECASE)
         if not match: return False
         query = self.sendable_text_to_text(match.group(1)) # get query as plain text in order to make things like < and > work (these are usually escaped)
 

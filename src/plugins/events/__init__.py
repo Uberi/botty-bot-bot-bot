@@ -48,7 +48,7 @@ class EventsPlugin(BasePlugin):
 
     def on_message(self, m):
         if not m.is_user_text_message: return False
-        match = re.search(r"\b(?:sup\s+botty|wassup\s+botty|wh?at'?s\s+up\s+botty|botty\s+wassup|botty\s+what's\s+up|what\s+are\s+the\s+haps)\b", m.text, re.IGNORECASE)
+        match = re.search(r"\b(?:sup\s+botty|wassup\s+botty|wh?at'?s\s+(?:up|good)\s+botty|botty\s+wassup|botty\s+what's\s+(?:up|good)|what\s+are\s+the\s+haps)\b", m.text, re.IGNORECASE)
         if not match: return False
 
         # obtain Google Calendar service
@@ -108,6 +108,6 @@ class EventsPlugin(BasePlugin):
                     end.strftime("%H:%M %Y-%m-%d (%A)"),
                     url
                 ))
-        self.respond(":timer_clock: *EVENTS IN THE NEXT 7 DAYS* :timer_clock:\n{}".format("\n".join(result)))
+        self.respond(":timer_clock: *EVENTS IN THE NEXT 7 DAYS* :timer_clock:\n\n{}".format("\n\n".join(result)))
 
         return True
