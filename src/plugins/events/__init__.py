@@ -48,7 +48,7 @@ class EventsPlugin(BasePlugin):
 
     def on_message(self, m):
         if not m.is_user_text_message: return False
-        match = re.search(r"\b(?:sup\s+botty|wassup\s+botty|wh?at'?s\s+(?:up|good)\s+botty|botty\s+wassup|botty\s+what's\s+(?:up|good)|what\s+are\s+the\s+haps)\b", m.text, re.IGNORECASE)
+        match = re.search(r"\b(?:sup\s+botty|wassup\s+botty|wh?at['\u2019]?s\s+(?:up|good)\s+botty|botty\s+wassup|botty\s+what['\u2019]s\s+(?:up|good)|what\s+are\s+the\s+haps)\b", m.text, re.IGNORECASE)
         if not match: return False
 
         # obtain Google Calendar service
