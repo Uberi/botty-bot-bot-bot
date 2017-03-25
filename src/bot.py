@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import time, json, sys, re, os, shutil
+import time, json, sys, re, os, shutil, bluetooth
 from datetime import datetime
 import traceback
 import logging
@@ -650,7 +650,8 @@ class IrlSlackBot(SlackBot):
             })
 
         # Send over Bluetooth
-        
+        self.flail()
+
         #text to speech
         tts = gTTS(text=sendable_text, lang='en')
         self.music_counter += 1
