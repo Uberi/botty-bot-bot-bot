@@ -20,3 +20,7 @@ pip3 install pytz
 # modules used by web interface
 pip3 install flask
 pip3 install flask-sqlalchemy
+
+# modules for irl-botty text to speech
+pip3 install gtts
+pip3 install pygame

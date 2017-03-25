@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import time, json, sys, re, bluetooth
+import time, json, sys, re, os, shutil
 from datetime import datetime
 import traceback
 import logging
 from collections import deque
 from functools import lru_cache
+from gtts import gTTS
+from pygame import mixer
 
 from slackclient import SlackClient
 
@@ -555,6 +557,10 @@ class IrlSlackBot(SlackBot):
         self.max_message_id = 1
         self.channel_name = "general"
         self.bot_user_id = "botty"
+        if os.path.exists("temp_music"):
+            shutil.rmtree("temp_music")
+        os.mkdir("temp_music")
+        self.music_counter = 0
 
     def start_loop(self): self.start()
 
@@ -645,6 +651,14 @@ class IrlSlackBot(SlackBot):
 
         # Send over Bluetooth
         
+        #text to speech
+        tts = gTTS(text=sendable_text, lang='en')
+        self.music_counter += 1
+        tts.save("temp_music\\temp" + str(self.music_counter) + ".mp3")
+        mixer.init()
+        mixer.music.load("temp_music\\temp" + str(self.music_counter) + ".mp3") # you may use .mp3 but support is limited
+        mixer.music.play()
+
         print("#{:<11}| Me: ".format(self.channel_name), end="", flush=True)
 
         message_id = self.max_message_id
