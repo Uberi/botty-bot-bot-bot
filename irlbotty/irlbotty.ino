@@ -54,8 +54,8 @@ void loop() {
     digitalWrite(6, LOW);
     digitalWrite(7, HIGH);
 
-    int min = random(60, 80);
-    int max = random(min + 20, 120);
+    int min = random(60, 100);
+    int max = random(min + 20, 160);
     int offset = random(-20, 20);
     int iterations = random(3,6);
     for(int q = 0; q <= iterations; q++) {
