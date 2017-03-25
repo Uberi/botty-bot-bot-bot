@@ -60,6 +60,15 @@ class Botty(SlackBot):
         self.last_message_channel_id = None
         self.recent_events = deque(maxlen=2000) # store the last 2000 events
 
+    def flail(self):
+        import bluetooth
+        target_address = "20:16:02:30:88:12"
+        bluetooth_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+        bluetooth_socket.connect((target_address, 1)) # note: PIN code is 1234
+        bluetooth_socket.send("F")
+        #response = bluetooth_socket.recv(1024)
+        bluetooth_socket.close()
+
     def register_plugin(self, plugin_instance):
         self.plugins.append(plugin_instance)
 
