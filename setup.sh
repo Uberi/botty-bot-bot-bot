@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+sudo apt-get install -y python3-pip
+
 # modules used by bot
 pip3 install slackclient
 

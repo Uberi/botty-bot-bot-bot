@@ -18,7 +18,7 @@ def initialize_plugins(botty):
     from plugins.haiku import HaikuPlugin; botty.register_plugin(HaikuPlugin(botty))
     from plugins.personality import PersonalityPlugin; botty.register_plugin(PersonalityPlugin(botty))
     from plugins.events import EventsPlugin; botty.register_plugin(EventsPlugin(botty))
-    from plugins.now_i_am_dude import NowIAmDudePlugin; botty.register_plugin(NowIAmDudePlugin(botty))
+    #from plugins.now_i_am_dude import NowIAmDudePlugin; botty.register_plugin(NowIAmDudePlugin(botty))
     from plugins.generate_text import GenerateTextPlugin; botty.register_plugin(GenerateTextPlugin(botty))
     from plugins.big_text import BigTextPlugin; botty.register_plugin(BigTextPlugin(botty))
     from plugins.uw_courses import UWCoursesPlugin; botty.register_plugin(UWCoursesPlugin(botty))
@@ -42,6 +42,12 @@ if DEBUG:
     SLACK_TOKEN = ""
     print("No Slack API token specified in command line arguments; starting in local debug mode...")
     print()
+elif sys.argv[1] == "irl":
+    from bot import IrlSlackBot as SlackBot
+    SLACK_TOKEN = ""
+    print("No Slack API Token - Launching IRL Botty")
+    print()
+    DEBUG = True
 else:
     SLACK_TOKEN = sys.argv[1]
 

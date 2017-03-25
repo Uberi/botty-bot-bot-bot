@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import time, json, sys, re
+import time, json, sys, re, bluetooth
 from datetime import datetime
 import traceback
 import logging
@@ -498,6 +498,162 @@ class SlackDebugBot(SlackBot):
         self.logger.info("removing reaction :{}: to message with timestamp {} in channel {}".format(emoticon, timestamp, self.get_channel_name_by_id(channel_id)))
         print("\r\033[K" + "#{:<11}| Botty unreacted to \"{}\" with {}".format(self.get_channel_name_by_id(channel_id), target_message["text"], emoticon)) # clear the current line using Erase in Line ANSI escape code
         print("#{:<11}| Me: ".format(self.channel_name), end = "", flush=True)
+
+    def get_channel_name_by_id(self, channel_id):
+        assert isinstance(channel_id, str), "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        return channel_id[1:]
+
+    def get_channel_id_by_name(self, channel_name):
+        assert isinstance(channel_name, str), "`channel_name` must be a valid channel name rather than \"{}\"".format(channel_name)
+        channel_name = channel_name.strip().lstrip("#")
+        return "C{}".format(channel_name)
+
+    def get_user_name_by_id(self, user_id):
+        assert isinstance(user_id, str), "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
+        return user_id[1:]
+
+    def get_user_id_by_name(self, user_name):
+        assert isinstance(user_name, str), "`user_name` must be a valid username rather than \"{}\"".format(user_name)
+        user_name = user_name.strip().lstrip("@")
+        return "U{}".format(user_name)
+
+    def get_direct_message_channel_id_by_user_id(self, user_id):
+        return "D{}".format(user_id)
+
+    def get_user_info_by_id(self, user_id):
+        assert isinstance(user_id, str), "`user_id` must be a valid user ID rather than \"{}\"".format(user_id)
+        return {
+            "color": "ff0000",
+            "id": "UMe", "name": "Me",
+            "deleted": False, "is_admin": False, "is_bot": False, "is_owner": False, "is_primary_owner": False, "is_restricted": False, "is_ultra_restricted": False,
+            "profile": {"email": "me@example.com", "first_name": "Some", "last_name": "Body", "real_name": "Some Body"},
+            "real_name": "Some Body",
+            "tz": "Canada/Eastern", "tz_label": "Eastern Daylight Time", "tz_offset": -25200,
+        }
+
+    def get_user_is_bot(self, user_id):
+        return False
+
+    def administrator_console(self, namespace):
+        raise NotImplementedError("The administrator console is not supported in the debug Slack bot.")
+
+class IrlSlackBot(SlackBot):
+    """
+    Slack debug bot - when started, exposes a command line interface for testing and debugging your Slack bot.
+
+    This class is designed to emulate the functionality of the `SlackBot` class as closely as possible. For method documentation, refer to the corresponding methods in the `SlackBot` class.
+    """
+    def __init__(self, token, logger=None):
+        assert isinstance(token, str), "`token` must be a valid Slack API token"
+        assert logger is None or not isinstance(logger, logging.Logger), "`logger` must be `None` or a logging function"
+
+        if logger is None: self.logger = logging.getLogger(self.__class__.__name__)
+        else: self.logger = logger
+
+        self.messages = []
+
+        self.max_message_id = 1
+        self.channel_name = "general"
+        self.bot_user_id = "botty"
+
+    def start_loop(self): self.start()
+
+    def start(self):
+        import threading, queue
+        import readline # this makes arrow keys work for input()
+
+        print("##########################################")
+        print("#   Botty IRL Environment   #")
+        print("##########################################")
+        print()
+        print("This is a local chat containing only you and Botty.")
+        print()
+        print("The following slash commands are available:")
+        print()
+        print("    /react -3 eggplant        | reacts to the third most recent text message with an eggplant")
+        print("    /unreact 1 heart          | removes the heart reaction from the second earliest text message")
+        print("    /reply -1 yeah definitely | replies to the most recent text message with \"yeah definitely\"")
+        print("    /channel random           | moves you and Botty to the #random channel")
+        print()
+
+        user_input_queue = queue.Queue()
+        def accept_input():
+            while True:
+                try:
+                    text = input("\r\033[K" + "#{:<11}| Me: ".format(self.channel_name)) # clear the current line using Erase in Line ANSI escape code (this allows us to overwrite the existing prompt if present)
+                except EOFError:
+                    user_input_queue.put(None)
+                    return
+
+                user_input_queue.put(text)
+                user_input_queue.join() # wait for the task to finish processing before allowing input again
+        input_thread = threading.Thread(target=accept_input, daemon=True) # thread dies when main thread (the only non-daemon thread) exits
+        input_thread.start()
+
+        try:
+            while True:
+                self.on_step()
+                while not user_input_queue.empty():
+                    user_input = user_input_queue.get()
+                    if user_input is None: raise KeyboardInterrupt # end of user input
+                    self.handle_user_input(user_input)
+                    user_input_queue.task_done()
+                time.sleep(0.01)
+        except KeyboardInterrupt: pass
+
+    def handle_user_input(self, text):
+        # handle normal message
+        message = {
+            "type": "message",
+            "channel": "C" + self.channel_name,
+            "user": "UMe",
+            "text": self.text_to_sendable_text(text),
+            "ts": str(time.monotonic()),
+        }
+        self.messages.append(message)
+        self.on_message(message)
+
+    def say(self, sendable_text, *, channel_id, thread_id = None):
+        assert self.get_channel_name_by_id(channel_id) is not None, "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
+        assert isinstance(thread_id, str) or thread_id is None, "`thread_id` must be a valid Slack timestamp or None, rather than \"{}\"".format(thread_id)
+        assert isinstance(sendable_text, str), "`sendable_text` must be a string rather than \"{}\"".format(sendable_text)
+
+        if thread_id is not None: # message in a thread
+            thread_first_message = next((m for m in self.messages if m["ts"] == thread_id), None)
+            assert thread_first_message is not None, "Invalid thread ID - can't find message with timestamp \"{}\"".format(thread_id)
+
+            self.logger.info("sending message to channel {} (in thread {}): {}".format(self.get_channel_name_by_id(channel_id), thread_id, sendable_text))
+            print("\r\033[K" + "#{:<11}| Botty (in thread for \"{}\"): {}".format(self.get_channel_name_by_id(channel_id), thread_first_message["text"], sendable_text)) # clear the current line using Erase in Line ANSI escape code
+            self.messages.append({
+                "type": "message",
+                "channel": "C" + self.channel_name,
+                "user": "UBotty",
+                "text": sendable_text,
+                "ts": str(time.monotonic()),
+                "thread_ts": thread_id,
+            })
+        else: # top-level message
+            self.logger.info("sending message to channel {}: {}".format(self.get_channel_name_by_id(channel_id), sendable_text))
+            print("\r\033[K" + "#{:<11}| Botty: {}".format(self.get_channel_name_by_id(channel_id), sendable_text)) # clear the current line using Erase in Line ANSI escape code
+            self.messages.append({
+                "type": "message",
+                "channel": "C" + self.channel_name,
+                "user": "UBotty",
+                "text": sendable_text,
+                "ts": str(time.monotonic()),
+            })
+
+        # Send over Bluetooth
+        
+        print("#{:<11}| Me: ".format(self.channel_name), end="", flush=True)
+
+        message_id = self.max_message_id
+        self.max_message_id += 1
+        return message_id
+
+    def say_complete(self, sendable_text, *, channel_id, thread_id = None, timeout = 5):
+        self.say(sendable_text, channel_id=channel_id, thread_id=thread_id)
+        return self.messages[-1]["ts"]
 
     def get_channel_name_by_id(self, channel_id):
         assert isinstance(channel_id, str), "`channel_id` must be a valid channel ID rather than \"{}\"".format(channel_id)
