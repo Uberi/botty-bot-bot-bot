@@ -22,8 +22,58 @@ void setup() {
 
 }
 
-void loop() {
+void doFlail() {
+  // Drive forwards
+  digitalWrite(4, HIGH);
+  digitalWrite(5, LOW);
+  digitalWrite(6, HIGH);
+  digitalWrite(7, LOW);
+  delay(1000);
+  // Drive backwards
+  digitalWrite(4, LOW);
+  digitalWrite(5, HIGH);
+  digitalWrite(6, LOW);
+  digitalWrite(7, HIGH);
+  delay(1000);
+  
+  // Spin Around
+  digitalWrite(4, HIGH);                             // Make the wheels spin
+  digitalWrite(5, LOW);
+  
+  digitalWrite(6, LOW);
+  digitalWrite(7, HIGH);
 
+  int min = random(60, 100);
+  int max = random(min + 20, 160);
+  int offset = random(-20, 20);
+  int iterations = random(6,9);
+  for(int q = 0; q <= iterations; q++) {
+    // FLAIL 3~~(0.0)~~~E
+    for (pos = min; pos <= max; pos += 1) {            // goes from min degrees to max degrees
+      // in steps of 1 degree
+      leftServo.write(180-pos + offset);               // tell servo to go to position in variable 'pos'
+      rightServo.write(pos + offset);  
+      delay(5);                                        // waits 5ms for the servo to reach the position
+    }
+    
+    for (pos = max; pos >= min; pos -= 1) {            // goes from max degrees to min degrees
+      rightServo.write(180-pos + offset);              // tell servo to go to position in variable 'pos'
+      leftServo.write(pos + offset);  
+      delay(5);                                        // waits 5ms for the servo to reach the position
+    }
+    delay(200);
+  } 
+  digitalWrite(4, LOW);                             // Make the wheels spin
+  digitalWrite(5, LOW);
+    
+  digitalWrite(6, LOW);
+  digitalWrite(7, LOW);
+}
+
+void loop() {
+  doFlail();
+  return;
+  
   int i = 0;
   if(Serial.available() > 0)                           // Do actions on recieving data
   {
@@ -34,50 +84,6 @@ void loop() {
     }
     digitalWrite(13, LOW);
 
-    // Drive forwards
-    digitalWrite(4, HIGH);
-    digitalWrite(5, LOW);
-    digitalWrite(6, HIGH);
-    digitalWrite(7, LOW);
-    delay(1000);
-    // Drive backwards
-    digitalWrite(4, LOW);
-    digitalWrite(5, HIGH);
-    digitalWrite(6, LOW);
-    digitalWrite(7, HIGH);
-    delay(1000);
-    
-    // Spin Around
-    digitalWrite(4, HIGH);                             // Make the wheels spin
-    digitalWrite(5, LOW);
-    
-    digitalWrite(6, LOW);
-    digitalWrite(7, HIGH);
-
-    int min = random(60, 100);
-    int max = random(min + 20, 160);
-    int offset = random(-20, 20);
-    int iterations = random(3,6);
-    for(int q = 0; q <= iterations; q++) {
-      // FLAIL 3~~(0.0)~~~E
-      for (pos = min; pos <= max; pos += 1) {            // goes from min degrees to max degrees
-        // in steps of 1 degree
-        leftServo.write(180-pos + offset);               // tell servo to go to position in variable 'pos'
-        rightServo.write(pos + offset);  
-        delay(5);                                        // waits 5ms for the servo to reach the position
-      }
-      
-      for (pos = max; pos >= min; pos -= 1) {            // goes from max degrees to min degrees
-        rightServo.write(180-pos + offset);              // tell servo to go to position in variable 'pos'
-        leftServo.write(pos + offset);  
-        delay(5);                                        // waits 5ms for the servo to reach the position
-      }
-      delay(200);
-    }
+    doFlail();
   }
-  digitalWrite(4, LOW);                             // Make the wheels spin
-  digitalWrite(5, LOW);
-    
-  digitalWrite(6, LOW);
-  digitalWrite(7, LOW);
 }

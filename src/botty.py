@@ -66,7 +66,7 @@ class Botty(SlackBot):
         bluetooth_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
         bluetooth_socket.connect((target_address, 1)) # note: PIN code is 1234
         bluetooth_socket.send("F")
-        #response = bluetooth_socket.recv(1024)
+        response = bluetooth_socket.recv(1) # read one byte from client
         bluetooth_socket.close()
 
     def register_plugin(self, plugin_instance):
