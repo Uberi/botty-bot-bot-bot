@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 
 # modules used by bot
-pip3 install --upgrade slackclient
+python3 -m pip install --upgrade slackclient
 
 # modules used by plugins
-pip3 install --upgrade python-dateutil
-pip3 install --upgrade requests
-pip3 install --upgrade recurrent
-pip3 install --upgrade wikipedia
-pip3 install --upgrade sympy
-pip3 install --upgrade pyfiglet
-pip3 install --upgrade google-api-python-client
-pip3 install --upgrade pillow
-pip3 install --upgrade imgurpython
-pip3 install --upgrade pytz
+python3 -m pip install --upgrade python-dateutil
+python3 -m pip install --upgrade requests
+python3 -m pip install --upgrade recurrent
+python3 -m pip install --upgrade wikipedia
+python3 -m pip install --upgrade sympy
+python3 -m pip install --upgrade pyfiglet
+python3 -m pip install --upgrade google-api-python-client
+python3 -m pip install --upgrade pillow
+python3 -m pip install --upgrade imgurpython
+python3 -m pip install --upgrade pytz
+
+# modules used by history UI
+python3 -m pip install --upgrade wheel
+python3 -m pip install --upgrade requests
+python3 -m pip install --upgrade slackclient
+python3 -m pip install --upgrade flask
+python3 -m pip install --upgrade flask-sqlalchemy
+python3 -m pip install --upgrade flask-caching
+python3 -m pip install --upgrade cachetools

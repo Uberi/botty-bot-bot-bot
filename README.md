@@ -15,7 +15,21 @@ Features
 Deployment
 ----------
 
-To set up the prerequisites, run `./setup.sh`, preferably in a virtualenv.
+From a fresh new t2.micro instance on AWS EC2 with a new 16GB EBS volume:
+
+1. SSH into the machine: `ssh ec2-user@ec2-34-213-63-151.us-west-2.compute.amazonaws.com`.
+2. Run software updates: `sudo yum update`.
+3. In `/etc/ssh/sshd_config`, change `Port` to `48372` and `PasswordAuthentication` to `no` and `PermitRootLogin` to `no` and `AllowUsers` to `ec2-user`. Restart `sshd` using `sudo service sshd restart`.
+4. Stop unnecessary services: `sudo service sendmail stop`.
+5. Get requirements: `sudo yum install git python35 python35-pip`.
+6. Use a virtualenv: `sudo python3 -m pip install virtualenv`, `virtualenv venv`, `source ./venv/bin/activate`.
+7. Transfer over existing Slack history into the `@history` folder.
+
+Various plugin setup procedures:
+
+* Haiku
+* Markov chains
+* Spaaace
 
 To test locally, run `python3 src/botty.py` in the terminal:
 
