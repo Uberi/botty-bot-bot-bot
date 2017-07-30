@@ -20,13 +20,13 @@ class BasePlugin:
         self.flows = {}
 
     def get_history_files(self):
-        """Returns a mapping from channel names to absolute file paths of their history entries"""
+        """Returns a mapping from channel IDs to absolute file paths of their history entries"""
         for dirpath, _, filenames in os.walk(CHAT_HISTORY_DIRECTORY):
             result = {}
             for history_file in filenames:
-                channel_name, extension = os.path.splitext(os.path.basename(history_file))
+                channel_id, extension = os.path.splitext(os.path.basename(history_file))
                 if extension != ".json": continue
-                result["#" + channel_name] = os.path.join(dirpath, history_file)
+                result[channel_id] = os.path.join(dirpath, history_file)
             return result
         return {}
 

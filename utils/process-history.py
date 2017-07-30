@@ -100,7 +100,8 @@ context_after = 0
 result = []
 for dirpath, _, filenames in os.walk(CHAT_HISTORY_DIRECTORY):
     for history_file in filenames:
-        channel_name, extension = os.path.splitext(os.path.basename(history_file))
+        channel_id, extension = os.path.splitext(os.path.basename(history_file))
+        channel_name = CHANNEL_NAMES_BY_ID[channel_id]
         if extension != ".json": continue
         if FILTER_CHANNEL and not FILTER_CHANNEL.search(channel_name): continue
         with open(os.path.join(dirpath, history_file), "r") as f:

@@ -59,7 +59,7 @@ To test locally, run `python3 src/botty.py` in the terminal:
 
 To run in production mode, run `python3 src/botty.py SLACK_API_TOKEN_GOES_HERE`, where `SLACK_API_TOKEN_GOES_HERE` is the Slack API token (obtainable from the [Slack API site](https://api.slack.com/)). Alternatively, edit `example-start-botty.sh` to replace `SLACK_API_TOKEN_GOES_HERE` with the Slack API token, then run `./example-start-botty.sh`.
 
-Currently, a Botty instance is deployed for [nokappa.slack.com](https://nokappa.slack.com/) on DigitalOcean inside a [tmux](https://tmux.github.io/) session, to allow monitoring and management over SSH. Code updates are done via Git.
+Currently, a Botty instance is deployed for [nokappa.slack.com](https://nokappa.slack.com/) on EC2 inside a [tmux](https://tmux.github.io/) session, to allow monitoring and management over SSH. Code updates are done via Git.
 
 Developing Botty
 ----------------

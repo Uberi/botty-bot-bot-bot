@@ -68,13 +68,13 @@ def get_message_text(message):
     return None
 
 def get_history_files():
-    """Returns a mapping from channel names to absolute file paths of their history entries"""
+    """Returns a mapping from channel IDs to absolute file paths of their history entries"""
     for dirpath, _, filenames in os.walk(CHAT_HISTORY_DIRECTORY):
         result = {}
         for history_file in filenames:
-            channel_name, extension = os.path.splitext(os.path.basename(history_file))
+            channel_id, extension = os.path.splitext(os.path.basename(history_file))
             if extension != ".json": continue
-            result["#" + channel_name] = os.path.join(dirpath, history_file)
+            result[channel_id] = os.path.join(dirpath, history_file)
         return result
     return {}
 
@@ -84,7 +84,7 @@ word_syllable_counts = load_word_syllable_counts()
 # find messages with 5 syllables and 7 syllables
 five_syllable_messages = []
 seven_syllable_messages = []
-for channel_name, history_file in get_history_files().items():
+for channel_id, history_file in get_history_files().items():
     with open(history_file, "r") as f:
         for entry in f:
             text = get_message_text(json.loads(entry))

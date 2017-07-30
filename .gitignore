@@ -4,6 +4,7 @@
 utils/history.db
 download-history.sh
 venv/
+python-slackclient-master.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
