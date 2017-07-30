@@ -1,0 +1,63 @@
+body {
+	font-family: monospace;
+	width: 80%;
+	margin: 5em auto;
+	text-align: center;
+}
+
+h1 { font-size: 4em; margin: 0; }
+
+a { color: inherit; }
+
+table {
+	border-collapse: collapse;
+}
+table th, table td {
+	border-top: 1px solid #f0f0f0;
+	text-align: left;
+	vertical-align: top;
+	padding: 0.2em 0.5em;
+}
+table th {
+	border-top: none;
+}
+table .timestamp, table .channel, table .user {
+	white-space: nowrap;
+}
+
+pre { margin: 0; }
+
+input { font-family: inherit; padding: 0.5em; }
+button { font-family: inherit; }
+
+.divider { margin: 1em; }
+.divider:after { content: '\002732  \002732  \002732'; }
+
+#logout-button {
+	background-color: transparent;
+	text-decoration: underline;
+	border: none;
+	cursor: pointer;
+}
+
+.active-link { font-weight: 800; }
+
+.date-range-form {
+	margin-bottom: 1em;
+	width: 35em;
+	display: inline-flex;
+	flex-direction: row;
+}
+.date-range-form input { flex: 1 1 auto; }
+
+.search-form {
+	margin: 0 2em 1em 2em;
+	display: flex;
+	flex-direction: row;
+}
+.search-form input { flex: 1 1 auto; font-size: 2em; }
+.search-form button { font-size: 1.5em; }
+
+.message-sorting {
+	margin: 1em;
+}
