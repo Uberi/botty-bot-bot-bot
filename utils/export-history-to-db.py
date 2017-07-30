@@ -2,13 +2,16 @@
 
 import os, re, json
 import sqlite3
+import argparse
 
-# rebuild the database with chat history data if true, only add new chat history to the database otherwise
-# usually, we would set this to False, unless the database was corrupted or something, since rebuilding is relatively slow
-REBUILD_DATABASE = False
+parser = argparse.ArgumentParser()
+parser.add_argument("--rebuild", help="Completely rebuild the database from the chat history; if not specified, only new chat history is added to the database (slow, but useful if there end up being database issues).", dest="rebuild", action="store_true")
+parser.add_argument("--database", help="Path to SQLite database to export chat history to.", required=True)
+args = parser.parse_args()
 
-SQLITE_DATABASE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "history.db")
 CHAT_HISTORY_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "@history")
+REBUILD_DATABASE = args.rebuild
+SQLITE_DATABASE = args.database
 
 def server_text_to_sendable_text(server_text):
     """Returns `server_text`, a string in Slack server message format, converted into a string in Slack sendable message format."""

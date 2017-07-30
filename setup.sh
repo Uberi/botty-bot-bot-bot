@@ -23,3 +23,4 @@ python3 -m pip install --upgrade flask
 python3 -m pip install --upgrade flask-sqlalchemy
 python3 -m pip install --upgrade flask-caching
 python3 -m pip install --upgrade cachetools
+python3 -m pip install --upgrade gunicorn
