@@ -69,8 +69,6 @@ class PersonalityPlugin(BasePlugin):
             r"(?i)\b(?:thanks|thx|ty)\b.*\bbotty\b": lambda match: self.respond_raw(random.choice(
                 ["np", "np br0", "no prob", "don't mention it", "anytime"]
             )),
-            r"(?i)^\s*(\?+)\s*$":               lambda match: self.reply("question"),
-            r"(?i)^\s*(!+)\s*$":                lambda match: self.reply("exclamation"),
             r"(?i)\bdrink\s+some\s+water\b":    lambda match: self.reply("water_buffalo"),
             r"(?i)\bfor\s+the\s+(cd|record)\b": lambda match: self.reply("cd"),
             r"(?i)\begg":                       lambda match: self.reply("eggplant"),
