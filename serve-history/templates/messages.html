@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>complementary slackness theorems</title>
+	<link rel="stylesheet" type="text/css" href="{{ url_for("static", filename="lib/style.css") }}" />
+
+	<link rel="stylesheet" href="{{ url_for("static", filename="lib/flatpickr.min.css") }}">
+	<script src="{{ url_for("static", filename="lib/flatpickr.js") }}"></script>
+	<script type="text/javascript">
+	function main() {
+		// set up date range picker
+		flatpickr(".flatpickr", {
+			mode: "range",
+			enableTime: true,
+			enableSeconds: true,
+			onClose: function(selectedDates, dateStr, instance){
+				var fromTime = selectedDates[0].getTime() / 1000, toTime = selectedDates[1].getTime() / 1000;
+				var url = new URL(window.location.href);
+				url.searchParams.set("from", fromTime); url.searchParams.set("to", toTime); url.searchParams.delete("offset");
+				window.location.href = url.toString();
+			},
+		});
+		document.getElementById("clear-date-range").addEventListener("click", function(e) {
+			document.getElementById("date-range").value = "";
+			var url = new URL(window.location.href);
+			url.searchParams.delete("from"); url.searchParams.delete("to"); url.searchParams.delete("offset");
+			window.location.href = url.toString();
+			e.preventDefault();
+		})
+	}
+	</script>
+</head>
+<body onload="main()">
+	<h1>complementary slackness theorems</h1>
+	<form action="/logout" method="post"><input type="submit" value="log out" id="logout-button"></form>
+	<h2>channels</h2>
+	<div class="channels">
+		<a href="{{ request_args | set_request_arg("channel_ids", None) | url_from_request_args }}">any channel</a>{% for channel in channels %}
+		<a href="{{ request_args | set_request_arg("channel_ids", channel.channel_id) | url_from_request_args }}">#{{ channel.channel_name }}</a>{% endfor %}
+	</div>
+	<h2>users</h2>
+	<div class="users">
+		<a href="{{ request_args | set_request_arg("user_ids", None) | url_from_request_args }}">any user</a>{% for user in users %}
+		<a href="{{ request_args | set_request_arg("user_ids", user.user_id) | url_from_request_args }}" title={{ user.user_real_name }}>@{{ user.user_name }}</a>{% endfor %}
+	</div>
+	<h2>messages</h2>
+	<div class="messages">
+		<form class="date-range-form">
+			<input class="flatpickr" type="text" placeholder="date range" id="date-range" value="{{ current_date_range_display }}"><button type="submit" id="clear-date-range">clear</button>
+		</form>
+		<form action="{{ text_search_url }}" method="GET" class="search-form">
+			<input type="text" name="text" placeholder="(?i)how to quit git commit" title="Python-style regular expression" value="{{ request_args.get("text", "") }}" /><button type="submit">search</button>
+		</form>
+	</div>
+	<div>{#
+		#}{% if sort_type == "time-ascending" %}{#
+			#}{% set first_page_word = "oldest" %}{% set previous_page_word = "older" %}{% set next_page_word = "newer" %}{% set last_page_word = "newest" %}{#
+		#}{% elif sort_type == "time_descending" %}{#
+			#}{% set first_page_word = "newest" %}{% set previous_page_word = "newer" %}{% set next_page_word = "older" %}{% set last_page_word = "oldest" %}{#
+		#}{% else %}{#
+			#}{% set first_page_word = "first" %}{% set previous_page_word = "previous" %}{% set next_page_word = "next" %}{% set last_page_word = "last" %}{#
+		#}{% endif %}
+		{% if first_page_url %}&#8676; <a href="{{ first_page_url }}">{{ first_page_word }}</a>{% else %}<span style="color: #ccc">&#8676; {{ first_page_word }}</span>{% endif %}
+		{% if previous_page_url %}&larr; <a href="{{ previous_page_url }}">{{ previous_page_word }}</a>{% else %}<span style="color: #ccc">&larr; {{ previous_page_word }}</span>{% endif %}
+		<span>{{ start_index + 1 }} to {{ end_index }} of {{ message_count }}</span>
+		{% if next_page_url %}<a href="{{ next_page_url }}">{{ next_page_word }}</a> &rarr;{% else %}<span style="color: #ccc">{{ next_page_word }} &rarr;</span>{% endif %}
+		{% if last_page_url %}<a href="{{ last_page_url }}">{{ last_page_word }}</a> &#8677;{% else %}<span style="color: #ccc">{{ last_page_word }} &#8677;</span>{% endif %}
+	</div>
+	<div class="message-sorting">
+		<a href="{{ request_args | set_request_arg("sort", "time-ascending") | url_from_request_args }}"{% if request_args.get("sort", "time-ascending") == "time-ascending" %} class="active-link"{% endif %}>oldest to newest</a>
+		<a href="{{ request_args | set_request_arg("sort", "time-descending") | url_from_request_args }}"{% if request_args.get("sort") == "time-descending" %} class="active-link"{% endif %}>newest to oldest</a>
+		<a href="{{ request_args | set_request_arg("sort", "channel-ascending") | url_from_request_args }}"{% if request_args.get("sort") == "channel-ascending" %} class="active-link"{% endif %}>channel name A-Z</a>
+		<a href="{{ request_args | set_request_arg("sort", "channel-descending") | url_from_request_args }}"{% if request_args.get("sort") == "channel-descending" %} class="active-link"{% endif %}>channel name Z-A</a>
+		<a href="{{ request_args | set_request_arg("sort", "user-ascending") | url_from_request_args }}"{% if request_args.get("sort") == "user-ascending" %} style="font-weight: 800"{% endif %}>user name A-Z</a>
+		<a href="{{ request_args | set_request_arg("sort", "user-descending") | url_from_request_args }}"{% if request_args.get("sort") == "user-descending" %} class="active-link"{% endif %}>user name Z-A</a>
+	</div>
+	<div class="divider"></div>{% if messages %}
+	<table class="messages">
+		<thead>
+			<tr>
+				<th>when</th>
+				<th>where</th>
+				<th>who</th>
+				<th>what</th>
+			</tr>
+		</thead>
+		<tbody>{% for message in messages %}
+			<tr>
+				<td class="timestamp">{{ message.datetime().strftime("%Y-%m-%d %H:%M:%S") }}</td>
+				<td class="channel"><a href="{{ request_args | set_request_arg("channel_ids", message.channel_id) | url_from_request_args }}">{{ message.channel.channel_name }}</a></td>
+				<td class="user"><a href="{{ request_args | set_request_arg("user_ids", message.user_id) | url_from_request_args }}" title="{{ message.user.user_real_name }}">{{ message.user.user_name }}</a></td>
+				<td class="value"><pre>{{ message | html_from_slack_sendable_text | safe }}</pre></td>
+			</tr>{% endfor %}
+		</tbody>
+	</table>{% else %}
+	<p>no messages :(</p>{% endif %}
+	<div class="divider"></div>
+	<div class="message-sorting">
+		<a href="{{ request_args | set_request_arg("sort", "time-ascending") | url_from_request_args }}"{% if request_args.get("sort", "time-ascending") == "time-ascending" %} style="font-weight: 800"{% endif %}>oldest to newest</a>
+		<a href="{{ request_args | set_request_arg("sort", "time-descending") | url_from_request_args }}"{% if request_args.get("sort") == "time-descending" %} style="font-weight: 800"{% endif %}>newest to oldest</a>
+		<a href="{{ request_args | set_request_arg("sort", "channel-ascending") | url_from_request_args }}"{% if request_args.get("sort") == "channel-ascending" %} style="font-weight: 800"{% endif %}>channel name A-Z</a>
+		<a href="{{ request_args | set_request_arg("sort", "channel-descending") | url_from_request_args }}"{% if request_args.get("sort") == "channel-descending" %} style="font-weight: 800"{% endif %}>channel name Z-A</a>
+		<a href="{{ request_args | set_request_arg("sort", "user-ascending") | url_from_request_args }}"{% if request_args.get("sort") == "user-ascending" %} style="font-weight: 800"{% endif %}>user name A-Z</a>
+		<a href="{{ request_args | set_request_arg("sort", "user-descending") | url_from_request_args }}"{% if request_args.get("sort") == "user-descending" %} style="font-weight: 800"{% endif %}>user name Z-A</a>
+	</div>
+	<div>
+		{% if first_page_url %}&#8676; <a href="{{ first_page_url }}">{{ first_page_word }}</a>{% else %}<span style="color: #ccc">&#8676; {{ first_page_word }}</span>{% endif %}
+		{% if previous_page_url %}&larr; <a href="{{ previous_page_url }}">{{ previous_page_word }}</a>{% else %}<span style="color: #ccc">&larr; {{ previous_page_word }}</span>{% endif %}
+		<span>{{ start_index + 1 }} to {{ end_index }} of {{ message_count }}</span>
+		{% if next_page_url %}<a href="{{ next_page_url }}">{{ next_page_word }}</a> &rarr;{% else %}<span style="color: #ccc">{{ next_page_word }} &rarr;</span>{% endif %}
+		{% if last_page_url %}<a href="{{ last_page_url }}">{{ last_page_word }}</a> &#8677;{% else %}<span style="color: #ccc">{{ last_page_word }} &#8677;</span>{% endif %}
+	</div>
+</body>
+</html>
