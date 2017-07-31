@@ -47,7 +47,7 @@ def get_message_text(message):
     if not isinstance(message.get("ts"), str): return None
     return server_text_to_sendable_text(message["text"])
 
-def message_values(channel_id, history_lines, start_at_timestamp_and_timestamp_order):
+def message_values(channel_id, history_lines, start_at_timestamp_and_timestamp_order, max_channel_offset):
     for entry in history_lines:
         message = json.loads(entry)
 
@@ -59,7 +59,9 @@ def message_values(channel_id, history_lines, start_at_timestamp_and_timestamp_o
         text = get_message_text(message)
         if text is None: continue
 
-        yield (timestamp, timestamp_order, channel_id, message["user"], text)
+        max_channel_offset += 1
+
+        yield (timestamp, timestamp_order, channel_id, message["user"], text, max_channel_offset)
 
 def recreate_database(db_connection):
     db_connection.execute("DROP TABLE IF EXISTS messages")
@@ -72,6 +74,7 @@ def recreate_database(db_connection):
         channel_id TEXT,
         user_id TEXT,
         value TEXT,
+        channel_offset INTEGER,
         PRIMARY KEY (timestamp, timestamp_order, channel_id),
         FOREIGN KEY (channel_id) REFERENCES channels(channel_id),
         FOREIGN KEY (user_id) REFERENCES users(user_id)
@@ -94,9 +97,9 @@ def recreate_database(db_connection):
     """)
 
     # create channel index for messages table
-    # we don't need any other indices for the messages table since the primary key autoindex covers timestamp-timestamp_order queries (which are the only other query we're regularly running on the messages table)
-    # we don't need any indices for other tables since their primary key autoindices cover the types of queries we care about
+    # we don't need indices for the timestamp and timestamp_order columns since the autoindex covers it
     connection.execute("CREATE INDEX IF NOT EXISTS channel_index ON messages (channel_id)")
+    connection.execute("CREATE INDEX IF NOT EXISTS channel_offset_index ON messages (channel_offset)")
 
 def export_metadata(db_connection, users, channels):
     db_connection.execute("DELETE FROM channels")
@@ -120,6 +123,8 @@ if REBUILD_DATABASE: recreate_database(connection)
 
 export_metadata(connection, users, channels)
 
+max_channel_offsets = dict(connection.execute("SELECT channel_id, max(channel_offset) FROM messages GROUP BY channel_id").fetchall())
+
 known_channel_ids = {channel["id"] for channel in channels}
 for channel_id, history_file in get_history_files().items():
     if channel_id not in known_channel_ids: continue  # ignore deleted channels - channels that we have history for that aren't in the metadata
@@ -131,8 +136,10 @@ for channel_id, history_file in get_history_files().items():
     else:
         newest_timestamp_and_timestamp_order = result
 
+    max_channel_offset = max_channel_offsets.get(channel_id, -1)
+
     with open(history_file, "r") as f:
-        connection.executemany("INSERT INTO messages VALUES (?, ?, ?, ?, ?)", message_values(channel_id, f, newest_timestamp_and_timestamp_order))
+        connection.executemany("INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?)", message_values(channel_id, f, newest_timestamp_and_timestamp_order, max_channel_offset))
 
 connection.commit()
 connection.close()

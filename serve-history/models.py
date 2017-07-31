@@ -16,6 +16,7 @@ class Message(db.Model):
     user = db.relationship("User", backref=db.backref("messages", lazy=True))
     channel = db.relationship("Channel", backref=db.backref("messages", lazy=True))
     value = db.Column(db.Text)
+    channel_offset = db.Column(db.Integer)
     def __init__(self, timestamp, timestamp_order, user_id, channel_id, value):
         self.timestamp, self.timestamp_order, self.user_id, self.channel_id, self.value = timestamp, timestamp_order, user_id, channel_id, value
     def __repr__(self): return "<Message at {}>".format(self.timestamp)

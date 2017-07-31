@@ -3,8 +3,7 @@
 #}{% set first_page_word = "oldest" if sort_type == "time-ascending" else ("newest" if sort_type == "time-descending" else "first") %}{#
 #}{% set previous_page_word = "older" if sort_type == "time-ascending" else ("newer" if sort_type == "time-descending" else "previous") %}{#
 #}{% set next_page_word = "newer" if sort_type == "time-ascending" else ("older" if sort_type == "time-descending" else "next") %}{#
-#}{% set last_page_word = "newest" if sort_type == "time-ascending" else ("oldest" if sort_type == "time-descending" else "last") %}{#
-#}{% set message_page_offset = request_args.get("offset") | int %}{% set message_page_offset = 0 if message_page_offset < 0 else message_page_offset %}
+#}{% set last_page_word = "newest" if sort_type == "time-ascending" else ("oldest" if sort_type == "time-descending" else "last") %}
 <head>
 	<meta charset="utf-8">
 	<title>complementary slackness theorems</title>
@@ -87,11 +86,11 @@
 		</thead>
 		<tbody>{% for message in messages %}{#
 			#}{% set message_fragment = "m-" ~ message.channel_id ~ "-" ~ message.timestamp ~ "-" ~ message.timestamp_order %}{#
-			#}{% set message_offset = 0 if message_page_offset + loop.index0 < 2500 else message_page_offset + loop.index0 - 2500 %}
+			#}{% set message_channel_offset = 0 if message.channel_offset < 2500 else message.channel_offset - 2500 %}
 			<tr id="{{ message_fragment }}">{#
-				#}<td class="timestamp"><a href="{{ request_args | set_request_arg("channel_ids", message.channel_id) | set_request_arg("offset", message_offset) | url_from_request_args }}#{{ message_fragment }}">{{ message.datetime().strftime("%Y-%m-%d %H:%M:%S") }}</a></td>{#
-				#}<td class="channel"><a href="{{ request_args | set_request_arg("channel_ids", message.channel_id) | url_from_request_args }}">{{ message.channel.channel_name }}</a></td>{#
-				#}<td class="user"><a href="{{ request_args | set_request_arg("user_ids", message.user_id) | url_from_request_args }}" title="{{ message.user.user_real_name }}">{{ message.user.user_name }}</a></td>{#
+				#}<td class="timestamp"><a href="#{{ message_fragment }}">{{ message.datetime().strftime("%Y-%m-%d %H:%M:%S") }}</a></td>{#
+				#}<td class="channel"><a href="{{ request_args | set_request_arg("channel_ids", message.channel_id) | set_request_arg("offset", message_channel_offset) | url_from_request_args }}#{{ message_fragment }}">{{ message.channel.channel_name }}</a></td>{#
+				#}<td class="user"><a href="{{ request_args | set_request_arg("user_ids", message.user_id) | set_request_arg("offset", None) | url_from_request_args }}" title="{{ message.user.user_real_name }}">{{ message.user.user_name }}</a></td>{#
 				#}<td class="value"><pre>{{ message | html_from_slack_sendable_text | safe }}</pre></td>{#
 			#}</tr>{% endfor %}
 		</tbody>
