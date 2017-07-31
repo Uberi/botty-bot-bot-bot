@@ -128,7 +128,7 @@ def set_request_arg(request_args, arg_name, arg_value=None):
     return new_args
 @app.template_filter("url_from_request_args")
 def url_from_request_args(request_args):
-    return flask.request.base_url + "?" + urlencode(request_args)
+    return flask.request.path + "?" + urlencode(request_args)
 
 @app.template_filter("html_from_slack_sendable_text")
 def html_from_slack_sendable_text(message):
@@ -173,8 +173,6 @@ def index():
     next_page_url = url_from_request_args(set_request_arg(request_args, "offset", offset + PAGE_SIZE)) if has_next_page else None
     last_page_url = url_from_request_args(set_request_arg(request_args, "offset", ((message_count - 1) // PAGE_SIZE) * PAGE_SIZE)) if has_next_page else None
 
-    text_search_url = url_from_request_args(set_request_arg(set_request_arg(request_args, "offset", None), "text", None))
-
     filter_from = datetime.fromtimestamp(int(request_args["from"])) if "from" in request_args else None
     filter_to = datetime.fromtimestamp(int(request_args["to"])) if "to" in request_args else None
     if filter_from is not None and filter_to is not None:
@@ -197,7 +195,6 @@ def index():
         next_page_url=next_page_url,
         last_page_url=last_page_url,
 
-        text_search_url=text_search_url,
         current_date_range_display=current_date_range_display,
 
         start_index=offset, end_index=offset + len(messages), message_count=message_count,

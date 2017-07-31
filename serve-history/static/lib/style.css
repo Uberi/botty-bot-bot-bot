@@ -18,6 +18,7 @@ table th, table td {
 	vertical-align: top;
 	padding: 0.2em 0.5em;
 }
+table tr:target { font-weight: 800; }
 table th {
 	border-top: none;
 }
