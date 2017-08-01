@@ -7,8 +7,13 @@ body {
 
 h1 { font-size: 4em; margin: 0; }
 
+/* nice-looking section divider, just apply the style to an empty div */
+.divider { margin: 1em; }
+.divider:after { content: '\002732  \002732  \002732'; }
+
 a { color: inherit; }
 
+/* styles for the messages table */
 table {
 	border-collapse: collapse;
 }
@@ -22,17 +27,18 @@ table tr:target { font-weight: 800; }
 table th {
 	border-top: none;
 }
-table .timestamp, table .channel, table .user {
-	white-space: nowrap;
-}
+table .timestamp, table .channel, table .user { white-space: nowrap; }
+table .value {
+	/* allow wrapping and preserve whitespace, allow breaking words if there's no other choice */
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
 
-pre { margin: 0; }
+	/* use a fixed max width rather than viewport-based width so stuff like ASCII art still displays well on mobile */
+	max-width: 100em;
+}
 
 input { font-family: inherit; padding: 0.5em; }
 button { font-family: inherit; }
-
-.divider { margin: 1em; }
-.divider:after { content: '\002732  \002732  \002732'; }
 
 #logout-button {
 	background-color: transparent;
@@ -41,8 +47,10 @@ button { font-family: inherit; }
 	cursor: pointer;
 }
 
+/* style applied to active filters/sort-options */
 .active-link { font-weight: 800; }
 
+/* styles for the date range form */
 .date-range-form {
 	margin-bottom: 1em;
 	width: 35em;
@@ -51,6 +59,7 @@ button { font-family: inherit; }
 }
 .date-range-form input { flex: 1 1 auto; }
 
+/* styles for the text search form */
 .search-form {
 	margin: 0 2em 1em 2em;
 	display: flex;
@@ -59,6 +68,4 @@ button { font-family: inherit; }
 .search-form input { flex: 1 1 auto; font-size: 2em; }
 .search-form button { font-size: 1.5em; }
 
-.message-sorting {
-	margin: 1em;
-}
+.message-sorting { margin: 1em; }
