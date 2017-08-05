@@ -184,10 +184,10 @@ def uploaded_file(filename):
     if app.debug:
         return flask.send_from_directory(FILES_DIRECTORY, filename)
 
-    # tell Nginx to serve the file using the special "X-Accel-Redirect" header
-    # this is a lot more efficient than using Flask to serve it
-    response = make_response("")
-    response["X-Accel-Redirect"] = FILES_REWRITE_PATH.format(filename=filename)
+    # tell Nginx to serve the file using the special "X-Accel-Redirect" header (way more efficient than using Flask to serve it)
+    response = flask.make_response("")  # empty response
+    del response.headers["Content-Type"]  # remove Content-Type header - allows Nginx to auto-detect the MIME type using the file extension
+    response.headers["X-Accel-Redirect"] = FILES_REWRITE_PATH.format(filename=filename)  # make an internal redirect to the actual file
     return response
 
 @app.route("/")
