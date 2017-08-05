@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import json, os, sys, logging, time
+import json, os, sys, logging, time, re
 import urllib.request, shutil
 
 from slackclient import SlackClient
@@ -104,12 +104,15 @@ def download_slack_history(slack_token, save_folder):
         for message in messages:
             if "file" not in message: continue
             file_entry = message["file"]
-            if "url_private_download" not in file_entry: continue # files like Google docs and such
-            logging.info("DOWNLOADING FILE \"{}\" (ID {}) IN #{}".format(file_entry["name"], file_entry["id"], channel_name))
+            file_id = file_entry["id"]
+            file_url = file_entry.get("url_private") or file_entry.get("url_private_download") or file_entry.get("url_download")
+            if file_url is None: continue # files without content like Google docs and such
+            logging.info("DOWNLOADING FILE \"{}\" (ID {}) IN #{}".format(file_entry["name"], file_id, channel_name))
             try:
-                download_file(slack_token, save_folder, "{} - {}".format(file_entry["id"], file_entry["name"]), file_entry["url_private_download"])
+                file_slack_name = re.search(r"/([^/]+)$", file_url).group(1)
+                download_file(slack_token, save_folder, "{}-{}".format(file_id, file_slack_name), file_url)
             except:
-                logging.exception("FILE DOWNLOAD FAILED FOR {}".format(file_entry["url_private_download"]))
+                logging.exception("FILE DOWNLOAD FAILED FOR {}".format(file_entry.get("url_private_download")))
         
         with open(message_file_path, "a") as f:
             for message in messages:
@@ -118,9 +121,10 @@ def download_slack_history(slack_token, save_folder):
         total_new_messages += len(messages)
     logging.info("DOWNLOADED {} NEW MESSAGES IN ALL CHANNELS".format(total_new_messages))
 
-def backfill_files():
+
+def backfill_files(slack_token, save_folder):
     """Goes through all the referenced files in the history and attempt to download them if they aren't already downloaded."""
-    def get_history_files():
+    def get_history_files(save_folder):
         """Returns a mapping from channel IDs to absolute file paths of their history entries"""
         for dirpath, _, filenames in os.walk(save_folder):
             result = {}
@@ -130,20 +134,18 @@ def backfill_files():
                 result[channel_id] = os.path.join(dirpath, history_file)
             return result
         return {}
-    for channel_id, history_file in get_history_files().items():
+    for channel_id, history_file in get_history_files(save_folder).items():
         with open(history_file, "r") as f:
             for entry in f:
                 message = json.loads(entry)
                 if "file" not in message: continue
                 file_entry = message["file"]
-                try:
-                    if "url_private_download" in file_entry:
-                        download_file("{} - {}".format(file_entry["id"], file_entry["name"]), file_entry["url_private_download"])
-                    elif "url_download" in file_entry:
-                        download_file("{} - {}".format(file_entry["id"], file_entry["name"]), file_entry["url_download"])
-                except:
-                    logging.exception("FILE DOWNLOAD FAILED FOR {}".format(file_entry["url_private_download"]))
+                file_id = file_entry["id"]
+                file_url = file_entry.get("url_private") or file_entry.get("url_private_download") or file_entry.get("url_download")
+                if file_url is None: continue
+                file_slack_name = re.search(r"/([^/]+)$", file_url).group(1)
+                download_file(slack_token, save_folder, "{}-{}".format(file_id, file_slack_name), file_url)
 
 if __name__ == "__main__":
     download_slack_history(SLACK_TOKEN, SAVE_FOLDER)
-    #backfill_files()
+    #backfill_files(SLACK_TOKEN, SAVE_FOLDER)

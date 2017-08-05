@@ -18,19 +18,27 @@ import models
 from models import Channel, User, get_messages
 
 SCRIPT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+
 DATABASE_URL = "sqlite:///{}".format(os.path.join(SCRIPT_DIRECTORY, "history.db"))
 
+# settings for serving files
+FILES_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, "..", "@history", "files")
+FILES_REWRITE_PATH = "/_static_internal/{filename}"
+
+# settings for slack authentication
 SESSION_SECRET_KEY = os.environ["SESSION_SECRET_KEY"]
 SLACK_CLIENT_ID = os.environ["SLACK_CLIENT_ID"]
 SLACK_CLIENT_SECRET = os.environ["SLACK_CLIENT_SECRET"]
 SLACK_AUTHENTICATION_REDIRECT_URL = os.environ["SLACK_AUTHENTICATION_REDIRECT_URL"]
 SLACK_TEAM_ID = os.environ["SLACK_TEAM_ID"]
+SLACK_TEAM_DOMAIN = os.environ["SLACK_TEAM_DOMAIN"]
 
 PAGE_SIZE = 5000
 
 # set up application
 app = flask.Flask(__name__)
 app.secret_key = SESSION_SECRET_KEY # used to encrypt flask.session cookies on the client side
+DEBUG_MODE = False # set to True when running using local Flask server
 
 # set up caching
 cache = Cache(app, config={"CACHE_TYPE": "simple"})
@@ -134,6 +142,7 @@ def url_from_request_args(request_args):
 def html_from_slack_sendable_text(message):
     channel_id, user_id, sendable_text = message.channel_id, message.user_id, message.value
     request_args = flask.request.args.to_dict()
+
     def process_special_sequence(match):
         original, body = match.group(0), match.group(1).split("|")[0]
         if body.startswith("#"):  # channel reference
@@ -154,7 +163,32 @@ def html_from_slack_sendable_text(message):
         if body == "!everyone":
             return """<strong>@everyone</strong>"""
         return original
-    return re.sub(r"<(.*?)>", process_special_sequence, sendable_text)
+
+    def process_slack_file_link(match):
+        original, channel_id, file_slack_name = match.group(0), match.group(1), match.group(2)
+        archived_url = "/uploaded_files/{}-{}".format(channel_id, file_slack_name)
+        return """<a href="{}">{}</a>""".format(archived_url, original)
+
+    # process Slack special sequences
+    html_text = re.sub(r"<(.*?)>", process_special_sequence, sendable_text)
+
+    # process Slack file links
+    html_text = re.sub(r"\bhttps://{}\.slack\.com/files/[^/]+/(\w+)/([^/\s]+)".format(SLACK_TEAM_DOMAIN), process_slack_file_link, html_text)
+
+    return html_text
+
+@app.route("/uploaded_files/<path:filename>")
+@slackegginess_required
+def uploaded_file(filename):
+    # don't assume Nginx is in place if we're in debug mode - just send the file directly
+    if app.debug:
+        return flask.send_from_directory(FILES_DIRECTORY, filename)
+
+    # tell Nginx to serve the file using the special "X-Accel-Redirect" header
+    # this is a lot more efficient than using Flask to serve it
+    response = make_response("")
+    response["X-Accel-Redirect"] = FILES_REWRITE_PATH.format(filename=filename)
+    return response
 
 @app.route("/")
 @slackegginess_required
@@ -189,6 +223,8 @@ def index():
         users=users,
         request_args=request_args,
         sort_type=flask.request.args.get("sort", "time-ascending"),
+
+        slack_team_domain=SLACK_TEAM_DOMAIN,
 
         first_page_url=first_page_url,
         previous_page_url=previous_page_url,
@@ -247,4 +283,3 @@ def api_messages():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000) # debug mode
-    #app.run(debug=False, host="0.0.0.0", port=80) # release mode - publicly visible
