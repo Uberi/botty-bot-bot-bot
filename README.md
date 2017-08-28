@@ -2,6 +2,10 @@ Botty Bot Bot Bot
 =================
 Personable chatbot for [Slack](https://slack.com/) using the [Slack Realtime Messaging API](https://api.slack.com/rtm).
 
+See the [code reference](https://github.com/Uberi/botty-bot-bot-bot/blob/master/docs/reference.md) for API documentation, project file layout, and more.
+
+See the [plugin writing guide](https://github.com/Uberi/botty-bot-bot-bot/blob/master/docs/writing-plugins.md) for information about how to develop your own Botty plugins.
+
 Features
 --------
 
@@ -43,11 +47,12 @@ From a fresh new t2.micro instance on AWS EC2 with a new 16GB EBS volume:
 9. Set up Gunicorn as an Upstart service (Amazon Linux uses Upstart as its init system): `sudo cp serve-history/botty-upstart.conf /etc/init/botty.conf`.
 10. Fill in the missing values in `example-start-prod-serve-history.sh` (e.g., Slack OAuth client ID/secret, team ID, Flask sessions secret key).
 11. Make log files writeable: `chmod a+w serve-history/log/*` (Gunicorn will be run as user `nobody`, so any files it writes must be world-writeable).
-12. Set up Nginx as a reverse proxy: `sudo cp serve-history/botty-nginx.conf /etc/nginx/conf.d/botty.conf`. Edit the directory path in `/etc/nginx/conf.d/botty.conf` if your Botty project is not in `/var/www/botty-bot-bot-bot`.
+12. Set up Nginx as a reverse proxy: `sudo cp serve-history/botty-nginx.conf /etc/nginx/conf.d/botty.conf; chkconfig nginx on`. Edit the directory path in `/etc/nginx/conf.d/botty.conf` if your Botty project is not in `/var/www/botty-bot-bot-bot`.
 13. Set up SSL with Let's Encrypt: `sudo wget https://dl.eff.org/certbot-auto && sudo chmod a+x certbot-auto && sudo ./certbot-auto --nginx --debug`, follow the prompts.
 14. Set up twice-daily certificate renewal cronjob with Let's Encrypt: add `55 0,12 * * * sudo ~/botty-bot-bot-bot/certbot-auto renew --debug >> ~/botty-bot-bot-bot/letsencrypt-renew-certificate.log 2>&1` in the root crontab with `sudo crontab -e`.
 15. Start Gunicorn and Nginx: `sudo initctl restart botty` and `sudo service nginx restart`.
 16. In the AWS EC2 Console, under Security Groups, configure the instance's security group's inbound rules to allow TCP connections on 80 (HTTP), 443 (HTTPS), and 48372 (our custom SSH port).
+17. Login with `ssh -p 48372 ec2-user@ec2-34-213-63-151.us-west-2.compute.amazonaws.com -t 'tmux attach'`
 
 Some sources: [ExploreFlask](http://exploreflask.com/en/latest/deployment.html), [Deploying Gunicorn](http://docs.gunicorn.org/en/stable/deploy.html), [Upstart Cookbook](http://upstart.ubuntu.com/cookbook/).
 
@@ -97,10 +102,6 @@ To test locally, run `python3 src/botty.py` in the terminal:
     #general    | Me: 
 
 Botty ships with several plugins by default, some of which require API keys or take some time to start. If you don't need those plugins, simply comment out the relevant lines in the body of the `initialize_plugins` function in `src/botty.py` to disable them.
-
-See the [code reference](https://github.com/Uberi/botty-bot-bot-bot/blob/master/docs/reference.md) for API documentation, project file layout, and more.
-
-See the [plugin writing guide](https://github.com/Uberi/botty-bot-bot-bot/blob/master/docs/writing-plugins.md) for information about how to develop your own Botty plugins.
 
 License
 -------

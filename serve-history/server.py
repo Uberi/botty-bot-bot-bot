@@ -74,19 +74,19 @@ def retrieve_requested_messages(request_args):
     # validate parameters
     filter_from, filter_to = None, None
     filter_channel_ids, filter_user_ids = None, None
-    filter_text = None if param_text == "" else param_text
+    filter_text = None
     result_sort = "time-ascending"
     result_offset = 0
     if param_from is not None:
         try: filter_from = int(param_from)
         except ValueError:
-            response = jsonify({"message": "Invalid `from` parameter \"{}\" - must be valid UNIX timestamp".format(filter_from)})
+            response = jsonify({"message": "Invalid `from` parameter \"{}\" - must be valid UNIX timestamp".format(param_from)})
             response.status_code = 400
             return response, None, None
     if param_to is not None:
         try: filter_to = int(param_to)
         except ValueError:
-            response = jsonify({"message": "Invalid `to` parameter \"{}\" - must be valid UNIX timestamp".format(filter_to)})
+            response = jsonify({"message": "Invalid `to` parameter \"{}\" - must be valid UNIX timestamp".format(param_to)})
             response.status_code = 400
             return response, None, None
     if param_channel_ids is not None:
@@ -107,6 +107,12 @@ def retrieve_requested_messages(request_args):
                 return response, None, None
             filter_user_ids.add(param_user_id)
         filter_user_ids = frozenset(filter_user_ids)
+    if param_text is not None:
+        try: re.compile(param_text)
+        except ValueError:
+            response = jsonify({"message": "Invalid `text` parameter \"{}\" - must be valid Python-style regular expression".format(param_text)})
+            response.status_code = 400
+            return response, None, None
     if param_sort is not None:
         if param_sort not in {"time-ascending", "time-descending", "channel-ascending", "channel-descending", "user-ascending", "user-descending"}:
             response = jsonify({"message": "Invalid `sort` parameter \"{}\" - must be one of \"time-ascending\", \"time-descending\", \"channel-ascending\", \"channel-descending\", \"user-ascending\", or \"user-descending\"".format(param_sort)})
