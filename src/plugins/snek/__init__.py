@@ -56,10 +56,14 @@ class SnekPlugin(BasePlugin):
 
     def on_message(self, m):
         if not m.is_user_text_message: return False
-        match = re.search(r"\bs+n+([aeiou]*)k+e*s*\b", m.text, re.IGNORECASE)
+
+        # pattern requires 3 or more vowels to avoid triggering on words like "sneak"
+        match = re.search(r"\bs+n+([aeiou]{3,})k+e*s*\b", m.text, re.IGNORECASE)
         if not match: return False
 
-        snake_length = min(200, len(match.group(1))) # 200 is guaranteed to stay within the 4000 character limit
+        # make the snake have 3 body segments less than the number of vowels (to support the smol snek `:snake_tail0::snake_head:`)
+        # we limit the length to 200 because 200 of these emoji are guaranteed to stay within the 4000 character Slack message length limit
+        snake_length = min(200, len(match.group(1)) - 3)
         snake_sequence = [weighted_choose(self.snake_tail)] + [weighted_choose(self.snake_body) for _ in range(snake_length)] + [weighted_choose(self.snake_head)]
         snake_message = "".join(":{}:".format(entry) for entry in snake_sequence)
 

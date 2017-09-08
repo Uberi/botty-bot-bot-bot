@@ -25,7 +25,7 @@ DATABASE_URL = "sqlite:///{}".format(os.path.join(SCRIPT_DIRECTORY, "history.db"
 FILES_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, "..", "@history", "files")
 FILES_REWRITE_PATH = "/_static_internal/{filename}"
 
-# settings for slack authentication
+# settings for Slack OAuth login
 SESSION_SECRET_KEY = os.environ["SESSION_SECRET_KEY"]
 SLACK_CLIENT_ID = os.environ["SLACK_CLIENT_ID"]
 SLACK_CLIENT_SECRET = os.environ["SLACK_CLIENT_SECRET"]
@@ -38,7 +38,6 @@ PAGE_SIZE = 5000
 # set up application
 app = flask.Flask(__name__)
 app.secret_key = SESSION_SECRET_KEY # used to encrypt flask.session cookies on the client side
-DEBUG_MODE = False # set to True when running using local Flask server
 
 # set up caching
 cache = Cache(app, config={"CACHE_TYPE": "simple"})
@@ -48,17 +47,17 @@ app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 models.initialize_db(app)
 
-# set up login using Slack OAuth
+# set up login using Slack OAuth (note: logins are only required when the app is not in debug mode)
 @app.route("/login")
 def login():
-    return slack_auth.login(SLACK_TEAM_ID, SLACK_CLIENT_ID, SLACK_AUTHENTICATION_REDIRECT_URL)
+    return slack_auth.login(SLACK_TEAM_ID, SLACK_CLIENT_ID, SLACK_AUTHORIZE_REDIRECT_URL)
 @app.route("/logout", methods=["POST"])
 def logout():
     return slack_auth.logout("/")
-@app.route("/authenticate")
-def authenticate():
+@app.route("/authorize")
+def authorize():
     after_login_url = slack_auth.get_after_login_url() or "/"
-    return slack_auth.authenticate(SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, after_login_url, flask.redirect(after_login_url))
+    return slack_auth.authorize(SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, after_login_url, flask.redirect(after_login_url))
 slackegginess_required = slack_auth.team_membership_required(
     SLACK_TEAM_ID,
     lambda page_url: flask.render_template("login.html", login_url=flask.url_for("login", next=page_url))

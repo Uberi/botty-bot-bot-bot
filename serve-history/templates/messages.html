@@ -32,7 +32,36 @@
 			url.searchParams.delete("from"); url.searchParams.delete("to"); url.searchParams.delete("offset");
 			window.location.href = url.toString();
 			e.preventDefault();
-		})
+		});
+	}
+
+	function toggleExactMatch() {
+		var query = document.getElementById("text").value;
+		document.getElementById("text").value =	/^\^|\$$/.test(query) ?	query.replace(/^\^|\$$/g, "") :	"^" + query.replace(/^\^|\$$/g, "") + "$";
+	}
+	function toggleCaseSensitive() {
+		var query = document.getElementById("text").value;
+		if (/^\s*\(\?i\)/.test(query)) {
+			document.getElementById("text").value = query.replace("(?i)", "");
+		} else if (/^\s*\(\?[aLmsux]*i[aLmsux]*\)/.test(query)) {
+			document.getElementById("text").value = query.replace(/^\s*\(\?([aLmsux]*)i([aLmsux]*)\)/g, "(?$1$2)");
+		} else if (/^\s*\(\?[aLmsux]+\)/.test(query)) {
+			document.getElementById("text").value = query.replace(/^\s*\(\?([aLmsux]+)\)/g, "(?i$1)");
+		} else {
+			document.getElementById("text").value = "(?i)" + query;
+		}
+	}
+	function toggleCollapseWhitespace() {
+		var query = document.getElementById("text").value;
+		document.getElementById("text").value = /\s/.test(query) ? query.replace(/\s+/g, "\\s+") : query.replace(/(^|[^\\](?:\\\\)*)\\s\+/g, "$1 ");
+	}
+	function regexEscape() {
+		var query = document.getElementById("text").value;
+		document.getElementById("text").value = query.replace(/[^a-zA-Z0-9_]/g, "\\$&");
+	}
+	function regexUnescape() {
+		var query = document.getElementById("text").value;
+		document.getElementById("text").value = query.replace(/\\([^a-zA-Z0-9_])/g, "$1");
 	}
 	</script>
 </head>
@@ -56,7 +85,14 @@
 		</form>
 		<form action="{{ request.base_url }}" method="GET" class="search-form">{% for name, value in request_args.items() %}{% if name not in ["offset", "text"] %}
 			<input type="hidden" name="{{ name }}" value="{{ value }}" />{% endif %}{% endfor %}
-			<input type="text" name="text" placeholder="(?i)how to quit git commit" title="Python-style regular expression" value="{{ request_args.get("text", "") }}" /><button type="submit">search</button>
+			<div class="search-bar"><input type="text" id="text" name="text" placeholder="message text search" value="{{ request_args.get("text", "") }}" /><button type="submit">search</button></div>
+			<div class="search-options">
+				<button onclick="toggleExactMatch(); return false">toggle exact match</button>
+				<button onclick="toggleCaseSensitive(); return false">toggle case sensitive</button>
+				<button onclick="toggleCollapseWhitespace(); return false">toggle collapse whitespace</button>
+				<button onclick="regexEscape(); return false">escape metacharacters</button>
+				<button onclick="regexUnescape(); return false">unescape metacharacters</button>
+			</div>
 		</form>
 	</div>
 	<div>

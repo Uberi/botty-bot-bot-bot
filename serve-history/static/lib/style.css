@@ -62,10 +62,10 @@ button { font-family: inherit; }
 /* styles for the text search form */
 .search-form {
 	margin: 0 2em 1em 2em;
-	display: flex;
-	flex-direction: row;
 }
-.search-form input { flex: 1 1 auto; font-size: 2em; }
-.search-form button { font-size: 1.5em; }
+.search-bar { display: flex; flex-direction: row; }
+.search-bar input[name="text"] { flex: 1 1 auto; font-size: 2em; }
+.search-bar button { font-size: 1.5em; padding: 0 1em; }
+.search-options button { font-size: 0.8em; padding: 0.5em 1em; margin: 1em 0; }
 
 .message-sorting { margin: 1em; }

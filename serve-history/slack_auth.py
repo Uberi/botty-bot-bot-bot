@@ -1,5 +1,5 @@
 """
-Implements OAuth2 authentication with Slack.
+Implements OAuth2 authorization with Slack.
 
 ### Recommended workflow with Flask
 
@@ -8,19 +8,19 @@ Add the `/login` and `/logout` endpoints to your Flask app:
 ```python
 @app.route("/login")
 def login():
-    return slack_auth.login(SLACK_TEAM_ID, SLACK_CLIENT_ID, SLACK_AUTHENTICATION_REDIRECT_URL)
+    return slack_auth.login(SLACK_TEAM_ID, SLACK_CLIENT_ID, SLACK_AUTHORIZATION_REDIRECT_URL)
 @app.route("/logout", methods=["POST"])
 def logout():
     return slack_auth.logout("/")
 ```
 
-Add callback endpoint for the Slack API will return authentication results to (the endpoint must also be specified in the Slack App settings):
+Add callback endpoint for the Slack API will return authorization results to (the endpoint must also be specified in the Slack App settings):
 
 ```python
-@app.route("/authenticate")
-def authenticate():
+@app.route("/authorize")
+def authorize():
     after_login_url = slack_auth.get_after_login_url() or "/"
-    return slack_auth.authenticate(SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, after_login_url, flask.redirect(after_login_url))
+    return slack_auth.authorize(SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, after_login_url, flask.redirect(after_login_url))
 ```
 
 Add a decorator to conveniently protect endpoints using Slack login.
@@ -53,9 +53,12 @@ import time
 import flask
 import requests
 
-# maximum number of seconds before another auth.test Slack API call is required to re-validate a previously validated token
-# we don't call auth.test on every request because that would really slow things down, so we simply make sure we've called it recently enough that we feel safe trusting that it's still validated
+# maximum number of seconds before another users.identity Slack API call is required to re-validate a previously validated token
+# we don't call users.identity on every request because that would really slow things down, so we simply make sure we've called it recently enough that we feel safe trusting that it's still validated
 AUTHORIZATION_TIMEOUT = 60 * 10
+
+# whether to disable authorization when the app is in debug mode
+DISABLE_AUTHORIZATION_IN_DEBUG_MODE = True
 
 def login(slack_team_id, slack_client_id, slack_oauth_redirect_url):
     """
@@ -88,26 +91,28 @@ def logout(next_page_url):
 def get_after_login_url():
     return flask.request.args.get("state")
 
-def authenticate(slack_client_id, slack_client_secret, next_page_url, authentication_failure_page):
-    # handle user declining the authentication request
+def authorize(slack_client_id, slack_client_secret, next_page_url, authorization_failure_page):
+    # handle user declining the authorization request
     if flask.request.args.get("error"):
-        return authentication_failure_page
+        return authorization_failure_page
 
     # exchange the OAuth authorization code for a Slack API token
     oauth_authorization_code = flask.request.args.get("code")
+    if oauth_authorization_code is None:
+        return authorization_failure_page
     slack_access_result = requests.get("https://slack.com/api/oauth.access", params={
         "client_id": slack_client_id,
         "client_secret": slack_client_secret,
         "code": oauth_authorization_code,
     }).json()
     if not slack_access_result["ok"]:
-        return authentication_failure_page
+        return authorization_failure_page
     slack_api_token = slack_access_result.get("access_token")
 
     # confirm the user identity to get the username
     slack_authorization_result = requests.get("https://slack.com/api/users.identity", params={"token": slack_api_token}).json()
-    if not slack_authorization_result["ok"]:
-        return authentication_failure_page
+    if not slack_authorization_result.get("ok"):
+        return authorization_failure_page
     authorized_user_id, authorized_team_id = slack_authorization_result["user"]["id"], slack_authorization_result["team"]["id"]
 
     # mark the user as logged in
@@ -119,16 +124,20 @@ def authenticate(slack_client_id, slack_client_secret, next_page_url, authentica
     # redirect to the URL we wanted to visit before
     return flask.redirect(next_page_url)
 
-def team_membership_required(slack_team_id, get_authentication_failure_page):
+def team_membership_required(slack_team_id, get_authorization_failure_page):
     """
     Decorator factory for Flask endpoints for ensuring that the user is a member of the Slack team specified by `slack_team_id`.
     """
     def team_membership_required_decorator(route_function):
         @wraps(route_function)
         def team_membership_required_decorator_wrapper(*args, **kwargs):
+            # don't require logging in if DISABLE_AUTHORIZATION_IN_DEBUG_MODE is set and we're in debug mode
+            if DISABLE_AUTHORIZATION_IN_DEBUG_MODE and flask.current_app.debug:
+                return route_function(*args, **kwargs)
+
             # check if user has been authorized for the required team
             if flask.session.get("slack_auth_team_id") != slack_team_id:
-                return get_authentication_failure_page(flask.request.url)
+                return get_authorization_failure_page(flask.request.url)
 
             # check if the user's authorization has been validated recently enough
             current_time = time.time()
@@ -137,12 +146,12 @@ def team_membership_required(slack_team_id, get_authentication_failure_page):
                 slack_api_token = flask.session.get("slack_auth_api_token")
                 slack_authorization_result = requests.get("https://slack.com/api/users.identity", params={"token": slack_api_token}).json()
                 if not slack_authorization_result["ok"]:
-                    return get_authentication_failure_page(flask.request.url)
+                    return get_authorization_failure_page(flask.request.url)
                 authorized_user_id, authorized_team_id = slack_authorization_result["user"]["id"], slack_authorization_result["team"]["id"]
 
                 # check if user has been authorized for the required team
                 if authorized_team_id != slack_team_id:
-                    return get_authentication_failure_page(flask.request.url)
+                    return get_authorization_failure_page(flask.request.url)
 
                 # refresh the authorization to make sure it's fresh for next time
                 flask.session["slack_auth_time"] = time.time()
