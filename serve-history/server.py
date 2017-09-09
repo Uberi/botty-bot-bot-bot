@@ -29,7 +29,7 @@ FILES_REWRITE_PATH = "/_static_internal/{filename}"
 SESSION_SECRET_KEY = os.environ["SESSION_SECRET_KEY"]
 SLACK_CLIENT_ID = os.environ["SLACK_CLIENT_ID"]
 SLACK_CLIENT_SECRET = os.environ["SLACK_CLIENT_SECRET"]
-SLACK_AUTHENTICATION_REDIRECT_URL = os.environ["SLACK_AUTHENTICATION_REDIRECT_URL"]
+SLACK_AUTHORIZATION_REDIRECT_URL = os.environ["SLACK_AUTHORIZATION_REDIRECT_URL"]
 SLACK_TEAM_ID = os.environ["SLACK_TEAM_ID"]
 SLACK_TEAM_DOMAIN = os.environ["SLACK_TEAM_DOMAIN"]
 
@@ -50,7 +50,7 @@ models.initialize_db(app)
 # set up login using Slack OAuth (note: logins are only required when the app is not in debug mode)
 @app.route("/login")
 def login():
-    return slack_auth.login(SLACK_TEAM_ID, SLACK_CLIENT_ID, SLACK_AUTHORIZE_REDIRECT_URL)
+    return slack_auth.login(SLACK_TEAM_ID, SLACK_CLIENT_ID, SLACK_AUTHORIZATION_REDIRECT_URL)
 @app.route("/logout", methods=["POST"])
 def logout():
     return slack_auth.logout("/")
