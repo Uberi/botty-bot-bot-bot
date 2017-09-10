@@ -107,7 +107,9 @@ def retrieve_requested_messages(request_args):
             filter_user_ids.add(param_user_id)
         filter_user_ids = frozenset(filter_user_ids)
     if param_text is not None:
-        try: re.compile(param_text)
+        try:
+            re.compile(param_text)
+            filter_text = param_text
         except ValueError:
             response = jsonify({"message": "Invalid `text` parameter \"{}\" - must be valid Python-style regular expression".format(param_text)})
             response.status_code = 400
