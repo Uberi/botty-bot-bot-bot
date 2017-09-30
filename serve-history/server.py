@@ -199,6 +199,14 @@ def uploaded_file(filename):
     response.headers["X-Accel-Redirect"] = UPLOADED_FILE_REWRITE_PATH.format(filename=filename)  # make an internal redirect to the actual file
     return response
 
+@app.route("/raw_logs")
+@slackegginess_required
+def raw_logs_index():
+    _, _, filenames = next(os.walk(CHANNEL_HISTORY_DIRECTORY), (None, None, []))
+    filenames = [os.path.splitext(filename)[0] for filename in filenames]
+    return "<!doctype html><html><head><meta charset=\"utf-8\"></head><body><ul>{}</ul></body></html>".format("".join(
+        "<li><a href=\"/raw_logs/{0}\">{0}</a></li>".format(flask.escape(filename)) for filename in filenames
+    ))
 @app.route("/raw_logs/<channel_id>")
 @slackegginess_required
 def raw_logs(channel_id):

@@ -73,6 +73,7 @@
 		<a href="{{ request_args | set_request_arg("channel_ids", None) | set_request_arg("offset", None) | url_from_request_args }}"{% if request_args.get("channel_ids") == None %} class="active-link"{% endif %}>any channel</a>{% for channel in channels %}
 		<a href="{{ request_args | set_request_arg("channel_ids", channel.channel_id) | set_request_arg("offset", None) | url_from_request_args }}"{% if request_args.get("channel_ids") == channel.channel_id %} class="active-link"{% endif %}>#{{ channel.channel_name }}</a>{% endfor %}
 	</div>
+	<a href="/raw_logs" style="font-size: 70%">raw channel logs</a>
 	<h2>users</h2>
 	<div class="users">
 		<a href="{{ request_args | set_request_arg("user_ids", None) | set_request_arg("offset", None) | url_from_request_args }}"{% if request_args.get("user_ids") == None %} class="active-link"{% endif %}>any user</a>{% for user in users %}
