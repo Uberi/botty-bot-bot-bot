@@ -22,8 +22,10 @@ SCRIPT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 DATABASE_URL = "sqlite:///{}".format(os.path.join(SCRIPT_DIRECTORY, "history.db"))
 
 # settings for serving files
-FILES_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, "..", "@history", "files")
-FILES_REWRITE_PATH = "/_static_internal/{filename}"
+UPLOADED_FILE_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, "..", "@history", "files")
+UPLOADED_FILE_REWRITE_PATH = "/_logs_internal/files/{filename}"
+CHANNEL_HISTORY_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, "..", "@history")
+CHANNEL_HISTORY_REWRITE_PATH = "/_logs_internal/{filename}"
 
 # settings for Slack OAuth login
 SESSION_SECRET_KEY = os.environ["SESSION_SECRET_KEY"]
@@ -189,12 +191,27 @@ def html_from_slack_sendable_text(message):
 def uploaded_file(filename):
     # don't assume Nginx is in place if we're in debug mode - just send the file directly
     if app.debug:
-        return flask.send_from_directory(FILES_DIRECTORY, filename)
+        return flask.send_from_directory(UPLOADED_FILE_DIRECTORY, filename)
 
     # tell Nginx to serve the file using the special "X-Accel-Redirect" header (way more efficient than using Flask to serve it)
     response = flask.make_response("")  # empty response
     del response.headers["Content-Type"]  # remove Content-Type header - allows Nginx to auto-detect the MIME type using the file extension
-    response.headers["X-Accel-Redirect"] = FILES_REWRITE_PATH.format(filename=filename)  # make an internal redirect to the actual file
+    response.headers["X-Accel-Redirect"] = UPLOADED_FILE_REWRITE_PATH.format(filename=filename)  # make an internal redirect to the actual file
+    return response
+
+@app.route("/raw_logs/<channel_id>")
+@slackegginess_required
+def raw_logs(channel_id):
+    filename = "{}.json".format(channel_id)
+
+    # don't assume Nginx is in place if we're in debug mode - just send the file directly
+    if app.debug:
+        return flask.send_from_directory(CHANNEL_HISTORY_DIRECTORY, filename)
+
+    # tell Nginx to serve the file using the special "X-Accel-Redirect" header (way more efficient than using Flask to serve it)
+    response = flask.make_response("")  # empty response
+    del response.headers["Content-Type"]  # remove Content-Type header - allows Nginx to auto-detect the MIME type using the file extension
+    response.headers["X-Accel-Redirect"] = CHANNEL_HISTORY_REWRITE_PATH.format(filename=filename)  # make an internal redirect to the actual file
     return response
 
 @app.route("/")
