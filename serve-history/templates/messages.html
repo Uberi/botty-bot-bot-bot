@@ -84,7 +84,7 @@
 		<form class="date-range-form">
 			<input class="flatpickr" type="text" placeholder="date range" id="date-range" value="{{ current_date_range_display }}"><button type="submit" id="clear-date-range">clear</button>
 		</form>
-		<form action="{{ request.base_url }}" method="GET" class="search-form">{% for name, value in request_args.items() %}{% if name not in ["offset", "text"] %}
+		<form action="." method="GET" class="search-form">{% for name, value in request_args.items() %}{% if name not in ["offset", "text"] %}
 			<input type="hidden" name="{{ name }}" value="{{ value }}" />{% endif %}{% endfor %}
 			<div class="search-bar"><input type="text" id="text" name="text" placeholder="message text search" value="{{ request_args.get("text", "") }}" /><button type="submit">search</button></div>
 			<div class="search-options">
